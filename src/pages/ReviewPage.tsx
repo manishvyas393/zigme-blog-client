@@ -83,6 +83,8 @@ export function ReviewPage(): JSX.Element {
     return <div className="review-shell error-state">Review not found.</div>;
   }
 
+  const statusClass = `status-pill status-pill--${blog.status.replace(/_/g, "-")}`;
+
   return (
     <div className="review-shell">
       <section className="review-card">
@@ -97,7 +99,7 @@ export function ReviewPage(): JSX.Element {
           </div>
           <div>
             <span>Status</span>
-            <strong>{blog.status.replace(/_/g, " ")}</strong>
+            <strong className={statusClass}>{blog.status.replace(/_/g, " ")}</strong>
           </div>
         </div>
 

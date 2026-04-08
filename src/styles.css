@@ -357,13 +357,36 @@ textarea:focus {
 }
 
 .status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
   white-space: nowrap;
-  background: #ecf2f4;
-  color: #163955;
   border-radius: 999px;
   padding: 0.4rem 0.8rem;
   font-size: 0.82rem;
+  font-weight: 800;
   text-transform: capitalize;
+}
+
+.status-pill--draft {
+  background: #eef4f8;
+  color: #51677c;
+}
+
+.status-pill--pending {
+  background: #fff1dd;
+  color: #9b5d11;
+}
+
+.status-pill--approved {
+  background: #e8f7ed;
+  color: #1f6a3d;
+}
+
+.status-pill--rejected {
+  background: #fdeaea;
+  color: #9f2d2d;
 }
 
 .sources ul {
@@ -680,6 +703,10 @@ textarea:focus {
   display: block;
   color: #60778d;
   font-size: 0.9rem;
+}
+
+.meta-grid strong.status-pill {
+  margin-top: 0.2rem;
 }
 
 @media (max-width: 960px) {
