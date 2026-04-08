@@ -252,7 +252,7 @@ export function HomePage(): JSX.Element {
           <section className="news-card-shell">
             <div className="news-panel-header">
               <div>
-                <p className="eyebrow">Top 5 Latest News</p>
+                <p className="eyebrow">Top 10 Latest News</p>
                 <p className="news-hint">
                   These stories load automatically. Choose one and generate the blog
                   from it.
