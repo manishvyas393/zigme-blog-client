@@ -444,6 +444,64 @@ textarea:focus {
   padding-right: 0.25rem;
 }
 
+.news-loading-state {
+  min-height: 220px;
+  border-radius: 20px;
+  border: 1px dashed rgba(19, 34, 56, 0.14);
+  background: linear-gradient(180deg, rgba(248, 251, 253, 0.92), rgba(242, 247, 250, 0.88));
+  display: grid;
+  place-items: center;
+  gap: 0.95rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.news-loading-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.news-loading-copy strong {
+  color: #163955;
+  font-size: 1rem;
+}
+
+.news-loading-copy p {
+  margin: 0;
+  color: #60778d;
+  font-size: 0.88rem;
+}
+
+.news-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 3px solid rgba(17, 61, 92, 0.14);
+  border-top-color: #113d5c;
+  animation: spin 0.85s linear infinite;
+}
+
+.news-refreshing-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(17, 61, 92, 0.08);
+  color: #163955;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.news-refreshing-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: #113d5c;
+  box-shadow: 0 0 0 0 rgba(17, 61, 92, 0.28);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
 .news-card {
   border-radius: 18px;
   padding: 0.8rem 0.9rem 0.85rem;
@@ -666,5 +724,24 @@ textarea:focus {
   .news-panel-header {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
   }
 }

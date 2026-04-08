@@ -268,7 +268,15 @@ export function HomePage(): JSX.Element {
               </button>
             </div>
 
-            {latestNews.length ? (
+            {newsLoading && latestNews.length === 0 ? (
+              <div className="news-loading-state" aria-live="polite" aria-busy="true">
+                <div className="news-spinner" />
+                <div className="news-loading-copy">
+                  <strong>Loading latest news</strong>
+                  <p>Fetching fresh stories for {form.site}.</p>
+                </div>
+              </div>
+            ) : latestNews.length ? (
               <div className="news-list">
                 {latestNews.map((item, index) => (
                   <article
@@ -318,6 +326,13 @@ export function HomePage(): JSX.Element {
                 <p>No news items available right now.</p>
               </div>
             )}
+
+            {newsLoading && latestNews.length > 0 ? (
+              <div className="news-refreshing-state" aria-live="polite">
+                <span className="news-refreshing-dot" />
+                Refreshing latest news...
+              </div>
+            ) : null}
           </section>
         </div>
       </section>

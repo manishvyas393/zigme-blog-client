@@ -41,8 +41,6 @@ export interface BlogListItem {
   summary: string;
   html_content: string;
   status: "draft" | "pending" | "approved" | "rejected";
-  selected_news: SelectedNews | null;
-  source_results: SearchResult[];
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +77,7 @@ export interface GetBlogsParams {
   approved?: boolean;
   rejected?: boolean;
   status?: "draft" | "pending" | "approved" | "rejected";
+  platform?: "talent" | "hiring";
   page?: number;
   pageNo?: number;
   limit?: number;
@@ -119,6 +118,10 @@ export const api = {
 
     if (params.status) {
       searchParams.set("filter[status]", params.status);
+    }
+
+    if (params.platform) {
+      searchParams.set("filter[platform]", params.platform);
     }
 
     if (typeof params.page === "number") {
