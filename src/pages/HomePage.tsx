@@ -159,7 +159,7 @@ export function HomePage(): JSX.Element {
     try {
       const response = await api.sendForApproval(blog._id);
       setBlog(response.blog);
-      setMessage(response.mailResult.message || "Sent for approval.");
+      setMessage(response.mail_result.message || "Sent for approval.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send for approval.");
     } finally {
@@ -279,8 +279,8 @@ export function HomePage(): JSX.Element {
                     }
                   >
                     <div className="news-card-topline">
-                      <span>{item.sourceName || "News source"}</span>
-                      <span>{item.publishedAt || "Latest"}</span>
+                      <span>{item.source_name || "News source"}</span>
+                      <span>{item.published_at || "Latest"}</span>
                     </div>
                     <strong>{item.title}</strong>
                     <p>{item.snippet}</p>
@@ -334,19 +334,19 @@ export function HomePage(): JSX.Element {
 
           <p className="summary">{blog.summary}</p>
 
-          {blog.selectedNews ? (
+          {blog.selected_news ? (
             <div className="selected-news-badge">
               <span>Based on news:</span>
-              <strong>{blog.selectedNews.title}</strong>
+              <strong>{blog.selected_news.title}</strong>
               <div className="selected-news-meta">
-                <span>{blog.selectedNews.sourceName || "News source"}</span>
-                {blog.selectedNews.publishedAt ? (
-                  <span>{blog.selectedNews.publishedAt}</span>
+                <span>{blog.selected_news.source_name || "News source"}</span>
+                {blog.selected_news.published_at ? (
+                  <span>{blog.selected_news.published_at}</span>
                 ) : null}
               </div>
-              {isValidSourceUrl(blog.selectedNews.link) ? (
+              {isValidSourceUrl(blog.selected_news.link) ? (
                 <a
-                  href={blog.selectedNews.link}
+                  href={blog.selected_news.link}
                   target="_blank"
                   rel="noreferrer"
                   className="news-source-link"
@@ -360,7 +360,7 @@ export function HomePage(): JSX.Element {
           <div
             className="blog-body"
             dangerouslySetInnerHTML={{
-              __html: blog.htmlContent
+              __html: blog.html_content
             }}
           />
 

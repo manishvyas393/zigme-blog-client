@@ -2,8 +2,8 @@ export interface SelectedNews {
   title: string;
   link: string;
   snippet: string;
-  sourceName: string;
-  publishedAt: string;
+  source_name: string;
+  published_at: string;
 }
 
 export interface SearchResult {
@@ -14,23 +14,23 @@ export interface SearchResult {
 
 export interface Blog {
   _id: string;
-  blogGroupId: string;
+  blog_group_id: string;
   revision: number;
   site: string;
   prompt: string;
-  searchQuery: string;
+  search_query: string;
   title: string;
   summary: string;
-  htmlContent: string;
+  html_content: string;
   status: "draft" | "pending_approval" | "approved" | "rejected";
-  approvedFlag: boolean;
-  rejectedFlag: boolean;
-  reviewToken: string;
-  selectedNews: SelectedNews | null;
-  sourceResults: SearchResult[];
-  generationNotes: string;
-  createdAt: string;
-  updatedAt: string;
+  approved_flag: boolean;
+  rejected_flag: boolean;
+  review_token: string;
+  selected_news: SelectedNews | null;
+  source_results: SearchResult[];
+  generation_notes: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BlogListItem {
@@ -39,14 +39,14 @@ export interface BlogListItem {
   prompt: string;
   title: string;
   summary: string;
-  htmlContent: string;
+  html_content: string;
   status: "draft" | "pending" | "approved" | "rejected";
-  approvedFlag: boolean;
-  rejectedFlag: boolean;
-  selectedNews: SelectedNews | null;
-  sourceResults: SearchResult[];
-  createdAt: string;
-  updatedAt: string;
+  approved_flag: boolean;
+  rejected_flag: boolean;
+  selected_news: SelectedNews | null;
+  source_results: SearchResult[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BlogListResponse {
@@ -68,13 +68,13 @@ export interface LatestNewsResponse {
 
 export interface SendForApprovalResponse {
   blog: Blog;
-  mailResult: MailResult;
+  mail_result: MailResult;
 }
 
 export interface RejectResponse {
-  rejectedBlog: Blog;
-  regeneratedBlog: Blog;
-  mailResult: MailResult;
+  rejected_blog: Blog;
+  regenerated_blog: Blog;
+  mail_result: MailResult;
 }
 
 export interface GetBlogsParams {

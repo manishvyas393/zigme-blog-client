@@ -62,8 +62,8 @@ export function ReviewPage(): JSX.Element {
 
     try {
       const response = await api.reject(token);
-      setBlog(response.regeneratedBlog);
-      setMessage(response.mailResult.message || "Blog rejected and regenerated.");
+      setBlog(response.regenerated_blog);
+      setMessage(response.mail_result.message || "Blog rejected and regenerated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reject blog.");
     } finally {
@@ -104,7 +104,7 @@ export function ReviewPage(): JSX.Element {
         <div
           className="blog-body"
           dangerouslySetInnerHTML={{
-            __html: blog.htmlContent
+            __html: blog.html_content
           }}
         />
 
