@@ -148,7 +148,14 @@ export const api = {
     return request<LatestNewsResponse>("/blogs/latest-news", {
       method: "POST",
       body: JSON.stringify(body)
-    });
+    }).then((response) => ({
+      items: [...(response.items || [])].sort((left, right) => {
+        const leftTime = Date.parse(left.published_at || "");
+        const rightTime = Date.parse(right.published_at || "");
+
+        return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+      })
+    }));
   },
   generateBlog(body: { site: string; prompt: string }) {
     return request<Blog>("/blogs/generate", {
