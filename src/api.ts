@@ -33,6 +33,30 @@ export interface Blog {
   updatedAt: string;
 }
 
+export interface BlogListItem {
+  _id: string;
+  site: string;
+  prompt: string;
+  title: string;
+  summary: string;
+  htmlContent: string;
+  status: "draft" | "pending" | "approved" | "rejected";
+  approvedFlag: boolean;
+  rejectedFlag: boolean;
+  selectedNews: SelectedNews | null;
+  sourceResults: SearchResult[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BlogListResponse {
+  data: BlogListItem[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+
 export interface MailResult {
   delivered: boolean;
   message: string;
@@ -51,6 +75,16 @@ export interface RejectResponse {
   rejectedBlog: Blog;
   regeneratedBlog: Blog;
   mailResult: MailResult;
+}
+
+export interface GetBlogsParams {
+  approved?: boolean;
+  rejected?: boolean;
+  status?: "draft" | "pending" | "approved" | "rejected";
+  page?: number;
+  pageNo?: number;
+  limit?: number;
+  skip?: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
@@ -74,6 +108,41 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  getBlogs(params: GetBlogsParams = {}) {
+    const searchParams = new URLSearchParams();
+
+    if (typeof params.approved === "boolean") {
+      searchParams.set("filter[approved]", String(params.approved));
+    }
+
+    if (typeof params.rejected === "boolean") {
+      searchParams.set("filter[rejected]", String(params.rejected));
+    }
+
+    if (params.status) {
+      searchParams.set("filter[status]", params.status);
+    }
+
+    if (typeof params.page === "number") {
+      searchParams.set("page", String(params.page));
+    }
+
+    if (typeof params.pageNo === "number") {
+      searchParams.set("pageNo", String(params.pageNo));
+    }
+
+    if (typeof params.limit === "number") {
+      searchParams.set("limit", String(params.limit));
+    }
+
+    if (typeof params.skip === "number") {
+      searchParams.set("skip", String(params.skip));
+    }
+
+    const query = searchParams.toString();
+
+    return request<BlogListResponse>(`/blogs${query ? `?${query}` : ""}`);
+  },
   getLatestNews(body: { site: string; topic?: string }) {
     return request<LatestNewsResponse>("/blogs/latest-news", {
       method: "POST",
@@ -111,4 +180,3 @@ export const api = {
     });
   }
 };
-
