@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { api, type Blog } from "../api.js";
 
 export function ReviewPage(): JSX.Element {
-  const { token } = useParams<{ token: string }>();
+  const { id } = useParams<{ id: string }>();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,14 +12,14 @@ export function ReviewPage(): JSX.Element {
 
   useEffect(() => {
     async function load(): Promise<void> {
-      if (!token) {
-        setError("Review token is missing.");
+      if (!id) {
+        setError("Review id is missing.");
         setLoading(false);
         return;
       }
 
       try {
-        const response = await api.getReview(token);
+        const response = await api.getReview(id);
         setBlog(response);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load review.");
@@ -29,10 +29,10 @@ export function ReviewPage(): JSX.Element {
     }
 
     void load();
-  }, [token]);
+  }, [id]);
 
   async function handleApprove(): Promise<void> {
-    if (!token) {
+    if (!id) {
       return;
     }
 
@@ -41,7 +41,7 @@ export function ReviewPage(): JSX.Element {
     setMessage("");
 
     try {
-      const response = await api.approve(token);
+      const response = await api.approve(id);
       setBlog(response);
       setMessage("Blog approved successfully.");
     } catch (err) {
@@ -52,7 +52,7 @@ export function ReviewPage(): JSX.Element {
   }
 
   async function handleReject(): Promise<void> {
-    if (!token) {
+    if (!id) {
       return;
     }
 
@@ -61,7 +61,7 @@ export function ReviewPage(): JSX.Element {
     setMessage("");
 
     try {
-      const response = await api.reject(token);
+      const response = await api.reject(id);
       setBlog(response.regenerated_blog);
       setMessage(response.mail_result.message || "Blog rejected and regenerated.");
     } catch (err) {

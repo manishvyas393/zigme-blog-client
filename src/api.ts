@@ -22,10 +22,7 @@ export interface Blog {
   title: string;
   summary: string;
   html_content: string;
-  status: "draft" | "pending_approval" | "approved" | "rejected";
-  approved_flag: boolean;
-  rejected_flag: boolean;
-  review_token: string;
+  status: "draft" | "pending" | "approved" | "rejected";
   selected_news: SelectedNews | null;
   source_results: SearchResult[];
   generation_notes: string;
@@ -74,8 +71,6 @@ export interface RejectResponse {
 }
 
 export interface GetBlogsParams {
-  approved?: boolean;
-  rejected?: boolean;
   status?: "draft" | "pending" | "approved" | "rejected";
   platform?: "talent" | "hiring";
   page?: number;
@@ -107,14 +102,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   getBlogs(params: GetBlogsParams = {}) {
     const searchParams = new URLSearchParams();
-
-    if (typeof params.approved === "boolean") {
-      searchParams.set("filter[approved]", String(params.approved));
-    }
-
-    if (typeof params.rejected === "boolean") {
-      searchParams.set("filter[rejected]", String(params.rejected));
-    }
 
     if (params.status) {
       searchParams.set("filter[status]", params.status);
@@ -174,16 +161,16 @@ export const api = {
       method: "POST"
     });
   },
-  getReview(token: string) {
-    return request<Blog>(`/blogs/review/${token}`);
+  getReview(id: string) {
+    return request<Blog>(`/blogs/review/${id}`);
   },
-  approve(token: string) {
-    return request<Blog>(`/blogs/review/${token}/approve`, {
+  approve(id: string) {
+    return request<Blog>(`/blogs/review/${id}/approve`, {
       method: "POST"
     });
   },
-  reject(token: string) {
-    return request<RejectResponse>(`/blogs/review/${token}/reject`, {
+  reject(id: string) {
+    return request<RejectResponse>(`/blogs/review/${id}/reject`, {
       method: "POST"
     });
   }

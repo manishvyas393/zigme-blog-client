@@ -6,8 +6,7 @@ export default function App(): JSX.Element {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/review/:token" element={<ReviewPage />} />
+      <Route path="/review/:id" element={<ReviewPage />} />
     </Routes>
   );
 }
-
