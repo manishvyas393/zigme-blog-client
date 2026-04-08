@@ -41,8 +41,6 @@ export interface BlogListItem {
   summary: string;
   html_content: string;
   status: "draft" | "pending" | "approved" | "rejected";
-  approved_flag: boolean;
-  rejected_flag: boolean;
   selected_news: SelectedNews | null;
   source_results: SearchResult[];
   created_at: string;
