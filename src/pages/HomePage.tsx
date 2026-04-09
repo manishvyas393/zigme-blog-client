@@ -25,6 +25,24 @@ function isValidSourceUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(String(value || "").trim());
 }
 
+function formatPublishedDate(value: string | null | undefined): string {
+  if (!value) {
+    return "Latest";
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(parsedDate);
+}
+
 export function HomePage(): JSX.Element {
   const [form, setForm] = useState<FormState>(initialForm);
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -288,7 +306,7 @@ export function HomePage(): JSX.Element {
                   >
                     <div className="news-card-topline">
                       <span>{item.source_name || "News source"}</span>
-                      <span>{item.published_at || "Latest"}</span>
+                      <span>{formatPublishedDate(item.published_at)}</span>
                     </div>
                     <strong>{item.title}</strong>
                     <p>{item.snippet}</p>
@@ -352,11 +370,11 @@ export function HomePage(): JSX.Element {
           {blog.selected_news ? (
             <div className="selected-news-badge">
               <span>Based on news:</span>
-              <strong>{blog.selected_news.title}</strong>
+                <strong>{blog.selected_news.title}</strong>
               <div className="selected-news-meta">
                 <span>{blog.selected_news.source_name || "News source"}</span>
                 {blog.selected_news.published_at ? (
-                  <span>{blog.selected_news.published_at}</span>
+                  <span>{formatPublishedDate(blog.selected_news.published_at)}</span>
                 ) : null}
               </div>
               {isValidSourceUrl(blog.selected_news.link) ? (
