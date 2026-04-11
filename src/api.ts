@@ -56,6 +56,14 @@ export interface MailResult {
 }
 
 export interface LatestNewsResponse {
+  hiring: SelectedNews[];
+  talent: SelectedNews[];
+  items?: SelectedNews[];
+}
+
+export interface LatestNewsFeed {
+  hiring: SelectedNews[];
+  talent: SelectedNews[];
   items: SelectedNews[];
 }
 
@@ -99,6 +107,37 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return payload;
 }
 
+function normalizeLatestNews(items: SelectedNews[]): SelectedNews[] {
+  const seen = new Set<string>();
+
+  return items
+    .filter((item) => {
+      const link = String(item.link || "").trim();
+
+      if (!link || seen.has(link)) {
+        return false;
+      }
+
+      seen.add(link);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.published_at || "");
+      const rightTime = Date.parse(right.published_at || "");
+
+      return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+    })
+    .slice(0, 10);
+}
+
+function collectLatestNews(response: LatestNewsResponse): SelectedNews[] {
+  return normalizeLatestNews([
+    ...(response.hiring || []),
+    ...(response.talent || []),
+    ...(response.items || [])
+  ]);
+}
+
 export const api = {
   getBlogs(params: GetBlogsParams = {}) {
     const searchParams = new URLSearchParams();
@@ -135,14 +174,14 @@ export const api = {
     return request<LatestNewsResponse>("/blogs/latest-news", {
       method: "POST",
       body: JSON.stringify(body)
-    }).then((response) => ({
-      items: [...(response.items || [])].sort((left, right) => {
-        const leftTime = Date.parse(left.published_at || "");
-        const rightTime = Date.parse(right.published_at || "");
+    }).then((response) => {
+      const items = collectLatestNews(response);
 
-        return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
-      })
-    }));
+      return {
+        ...response,
+        items
+      };
+    }) as Promise<LatestNewsFeed>;
   },
   generateBlog(body: { site: string; prompt: string }) {
     return request<Blog>("/blogs/generate", {

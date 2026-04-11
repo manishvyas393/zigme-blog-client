@@ -11,6 +11,12 @@ type FormState = {
   prompt: string;
 };
 
+type NewsSection = "hiring" | "talent";
+
+type NewsFeed = Record<NewsSection, SelectedNews[]>;
+
+type SelectedNewsState = Record<NewsSection, number>;
+
 const initialForm: FormState = {
   site: "hiring.zigme.in",
   prompt: ""
@@ -51,8 +57,11 @@ export function HomePage(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [latestNews, setLatestNews] = useState<SelectedNews[]>([]);
-  const [selectedNewsIndex, setSelectedNewsIndex] = useState(-1);
+  const [newsFeed, setNewsFeed] = useState<NewsFeed>({ hiring: [], talent: [] });
+  const [selectedNewsIndex, setSelectedNewsIndex] = useState<SelectedNewsState>({
+    hiring: -1,
+    talent: -1
+  });
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
   const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -86,8 +95,14 @@ export function HomePage(): JSX.Element {
 
       try {
         const response = await api.getLatestNews({ site: form.site });
-        setLatestNews(response.items || []);
-        setSelectedNewsIndex((response.items || []).length > 0 ? 0 : -1);
+        setNewsFeed({
+          hiring: response.hiring || [],
+          talent: response.talent || []
+        });
+        setSelectedNewsIndex({
+          hiring: (response.hiring || []).length > 0 ? 0 : -1,
+          talent: (response.talent || []).length > 0 ? 0 : -1
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load latest news.");
       } finally {
@@ -97,6 +112,10 @@ export function HomePage(): JSX.Element {
 
     void loadLatestNews();
   }, [form.site]);
+
+  function getSelectedNews(section: NewsSection): SelectedNews | undefined {
+    return newsFeed[section][selectedNewsIndex[section]];
+  }
 
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -118,8 +137,8 @@ export function HomePage(): JSX.Element {
     }
   }
 
-  async function handleGenerateFromNews(): Promise<void> {
-    const selectedNews = latestNews[selectedNewsIndex];
+  async function handleGenerateFromNews(section: NewsSection): Promise<void> {
+    const selectedNews = getSelectedNews(section);
 
     if (!selectedNews) {
       setError("Select one news item first.");
@@ -155,8 +174,14 @@ export function HomePage(): JSX.Element {
 
     try {
       const response = await api.getLatestNews({ site: form.site });
-      setLatestNews(response.items || []);
-      setSelectedNewsIndex((response.items || []).length > 0 ? 0 : -1);
+      setNewsFeed({
+        hiring: response.hiring || [],
+        talent: response.talent || []
+      });
+      setSelectedNewsIndex({
+        hiring: (response.hiring || []).length > 0 ? 0 : -1,
+        talent: (response.talent || []).length > 0 ? 0 : -1
+      });
       setMessage("Latest news refreshed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to refresh latest news.");
@@ -183,6 +208,93 @@ export function HomePage(): JSX.Element {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function renderNewsSection(section: NewsSection, title: string): JSX.Element {
+    const items = newsFeed[section];
+    const selectedIndex = selectedNewsIndex[section];
+    const selectedNews = items[selectedIndex];
+
+    return (
+      <section className="news-section" aria-label={`${title} news`}>
+        <div className="news-section-header">
+          <div>
+            <p className="news-section-title">{title}</p>
+            <p className="news-section-count">{items.length} stories</p>
+          </div>
+          {selectedNews ? <span className="news-section-selected">Selected</span> : null}
+        </div>
+
+        {newsLoading && items.length === 0 ? (
+          <div className="news-loading-state" aria-live="polite" aria-busy="true">
+            <div className="news-spinner" />
+            <div className="news-loading-copy">
+              <strong>Loading {title.toLowerCase()} news</strong>
+              <p>Fetching fresh stories for {form.site}.</p>
+            </div>
+          </div>
+        ) : items.length ? (
+          <div className="news-list">
+            {items.map((item, index) => (
+              <article
+                key={`${section}-${item.link}-${index}`}
+                className={`news-card ${selectedIndex === index ? "is-selected" : ""}`}
+                onClick={() =>
+                  setSelectedNewsIndex((current) => ({
+                    ...current,
+                    [section]: current[section] === index ? -1 : index
+                  }))
+                }
+              >
+                <div className="news-card-topline">
+                  <span>{item.source_name || "News source"}</span>
+                  <span>{formatPublishedDate(item.published_at)}</span>
+                </div>
+                <strong>{item.title}</strong>
+                <p>{item.snippet}</p>
+                {isValidSourceUrl(item.link) ? (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="news-source-link"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    View Source
+                  </a>
+                ) : null}
+                {selectedIndex === index ? (
+                  <div className="news-card-actions">
+                    <button
+                      type="button"
+                      className="news-generate-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleGenerateFromNews(section);
+                      }}
+                      disabled={loading}
+                    >
+                      {loading ? "Generating..." : "Generate Blog"}
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-news-state">
+            <p>No {title.toLowerCase()} news items available right now.</p>
+          </div>
+        )}
+
+        {newsLoading && items.length > 0 ? (
+          <div className="news-refreshing-state" aria-live="polite">
+            <span className="news-refreshing-dot" />
+            Refreshing {title.toLowerCase()} news...
+          </div>
+        ) : null}
+      </section>
+    );
   }
 
   return (
@@ -272,8 +384,8 @@ export function HomePage(): JSX.Element {
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
                 <p className="news-hint">
-                  These stories load automatically. Choose one and generate the blog
-                  from it.
+                  These stories load automatically. Choose one from hiring or talent
+                  and generate the blog from it.
                 </p>
               </div>
               <button
@@ -286,66 +398,12 @@ export function HomePage(): JSX.Element {
               </button>
             </div>
 
-            {newsLoading && latestNews.length === 0 ? (
-              <div className="news-loading-state" aria-live="polite" aria-busy="true">
-                <div className="news-spinner" />
-                <div className="news-loading-copy">
-                  <strong>Loading latest news</strong>
-                  <p>Fetching fresh stories for {form.site}.</p>
-                </div>
-              </div>
-            ) : latestNews.length ? (
-              <div className="news-list">
-                {latestNews.map((item, index) => (
-                  <article
-                    key={`${item.link}-${index}`}
-                    className={`news-card ${selectedNewsIndex === index ? "is-selected" : ""}`}
-                    onClick={() =>
-                      setSelectedNewsIndex((current) => (current === index ? -1 : index))
-                    }
-                  >
-                    <div className="news-card-topline">
-                      <span>{item.source_name || "News source"}</span>
-                      <span>{formatPublishedDate(item.published_at)}</span>
-                    </div>
-                    <strong>{item.title}</strong>
-                    <p>{item.snippet}</p>
-                    {isValidSourceUrl(item.link) ? (
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="news-source-link"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        View Source
-                      </a>
-                    ) : null}
-                    {selectedNewsIndex === index ? (
-                      <div className="news-card-actions">
-                        <button
-                          type="button"
-                          className="news-generate-button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void handleGenerateFromNews();
-                          }}
-                          disabled={loading}
-                        >
-                          {loading ? "Generating..." : "Generate Blog"}
-                        </button>
-                      </div>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-news-state">
-                <p>No news items available right now.</p>
-              </div>
-            )}
+            <div className="news-sections">
+              {renderNewsSection("hiring", "Hiring")}
+              {renderNewsSection("talent", "Talent")}
+            </div>
 
-            {newsLoading && latestNews.length > 0 ? (
+            {newsLoading && (newsFeed.hiring.length > 0 || newsFeed.talent.length > 0) ? (
               <div className="news-refreshing-state" aria-live="polite">
                 <span className="news-refreshing-dot" />
                 Refreshing latest news...
