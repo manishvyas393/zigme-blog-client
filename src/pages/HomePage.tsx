@@ -19,6 +19,11 @@ type SelectedNewsState = Record<NewsSection, number>;
 
 type SiteValue = SiteOption["value"];
 
+type NewsTarget = {
+  section: NewsSection;
+  index: number;
+} | null;
+
 const initialForm: FormState = {
   site: "hiring.zigme.in",
   prompt: ""
@@ -69,6 +74,7 @@ export function HomePage(): JSX.Element {
     hiring: -1,
     talent: -1
   });
+  const [generatingNewsTarget, setGeneratingNewsTarget] = useState<NewsTarget>(null);
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
   const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -126,10 +132,6 @@ export function HomePage(): JSX.Element {
     void loadLatestNews();
   }, [form.site]);
 
-  function getSelectedNews(section: NewsSection): SelectedNews | undefined {
-    return newsFeed[section][selectedNewsIndex[section]];
-  }
-
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setLoading(true);
@@ -150,8 +152,8 @@ export function HomePage(): JSX.Element {
     }
   }
 
-  async function handleGenerateFromNews(section: NewsSection): Promise<void> {
-    const selectedNews = getSelectedNews(section);
+  async function handleGenerateFromNews(section: NewsSection, index: number): Promise<void> {
+    const selectedNews = newsFeed[section][index];
 
     if (!selectedNews) {
       setError("Select one news item first.");
@@ -164,7 +166,12 @@ export function HomePage(): JSX.Element {
     setLoading(true);
     setError("");
     setMessage("");
+    setGeneratingNewsTarget({ section, index });
     skipNextNewsReloadRef.current = true;
+    setSelectedNewsIndex((current) => ({
+      ...current,
+      [section]: index
+    }));
     setForm((current) => ({ ...current, site: targetSite }));
 
     try {
@@ -182,6 +189,7 @@ export function HomePage(): JSX.Element {
       setError(err instanceof Error ? err.message : "Failed to generate blog from news.");
     } finally {
       setLoading(false);
+      setGeneratingNewsTarget(null);
     }
   }
 
@@ -273,19 +281,19 @@ export function HomePage(): JSX.Element {
                       View Source
                     </a>
                   ) : null}
-                  {selectedIndex === index ? (
-                    <button
-                      type="button"
-                      className="news-generate-button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void handleGenerateFromNews(section);
-                      }}
-                      disabled={loading}
-                    >
-                      {loading ? "Generating..." : "Generate Blog"}
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className="news-generate-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleGenerateFromNews(section, index);
+                    }}
+                    disabled={loading}
+                  >
+                    {generatingNewsTarget?.section === section && generatingNewsTarget.index === index && loading
+                      ? "Generating..."
+                      : "Generate Blog"}
+                  </button>
                 </div>
               </article>
             ))}
