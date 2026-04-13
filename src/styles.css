@@ -19,6 +19,14 @@ body {
   margin: 0;
   min-height: 100vh;
   color: #132238;
+  position: relative;
+  overflow-x: hidden;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
 }
 
 a {
@@ -238,6 +246,13 @@ textarea:focus {
 
 .creator-shell-header {
   text-align: left;
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.25rem;
 }
 
 .creator-shell .hero-copy {

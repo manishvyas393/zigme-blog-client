@@ -78,7 +78,6 @@ export function HomePage(): JSX.Element {
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
   const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
-  const skipNextNewsReloadRef = useRef(false);
 
   function scrollToPreview(): void {
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -105,36 +104,6 @@ export function HomePage(): JSX.Element {
       document.removeEventListener("keydown", handleEscape);
     };
   }, []);
-
-  useEffect(() => {
-    async function loadLatestNews(): Promise<void> {
-      if (skipNextNewsReloadRef.current) {
-        skipNextNewsReloadRef.current = false;
-        return;
-      }
-
-      setNewsLoading(true);
-      setError("");
-
-      try {
-        const response = await api.getLatestNews({ site: form.site });
-        setNewsFeed({
-          hiring: response.hiring || [],
-          talent: response.talent || []
-        });
-        setSelectedNewsIndex({
-          hiring: -1,
-          talent: -1
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load latest news.");
-      } finally {
-        setNewsLoading(false);
-      }
-    }
-
-    void loadLatestNews();
-  }, [form.site]);
 
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -169,7 +138,6 @@ export function HomePage(): JSX.Element {
     setError("");
     setMessage("");
     setGeneratingNewsTarget({ section, index });
-    skipNextNewsReloadRef.current = true;
     setSelectedNewsIndex((current) => ({
       ...current,
       [section]: index
@@ -306,8 +274,10 @@ export function HomePage(): JSX.Element {
     <div className="page-shell">
       <section className="creator-shell">
         <div className="creator-shell-header">
+          <div className="brand-header">
+            <p className="eyebrow">ZigMe Blog Creator</p>
+          </div>
           <div>
-            <p className="eyebrow">Zigme Blog Creator</p>
             <p className="hero-copy">
               Choose the publishing site, optionally add a custom angle, and generate a
               blog from one of the latest news items.
@@ -389,8 +359,8 @@ export function HomePage(): JSX.Element {
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
                 <p className="news-hint">
-                  These news items load automatically. Choose one from hiring or talent
-                  and generate the blog from it.
+                  Click Refresh to load the latest hiring and talent news for the selected
+                  site. Choose one item and generate the blog from it.
                 </p>
               </div>
               <button
