@@ -119,8 +119,8 @@ export function HomePage(): JSX.Element {
           talent: response.talent || []
         });
         setSelectedNewsIndex({
-          hiring: (response.hiring || []).length > 0 ? 0 : -1,
-          talent: (response.talent || []).length > 0 ? 0 : -1
+          hiring: -1,
+          talent: -1
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load latest news.");
@@ -204,8 +204,8 @@ export function HomePage(): JSX.Element {
         talent: response.talent || []
       });
       setSelectedNewsIndex({
-        hiring: (response.hiring || []).length > 0 ? 0 : -1,
-        talent: (response.talent || []).length > 0 ? 0 : -1
+        hiring: -1,
+        talent: -1
       });
       setMessage("Latest news refreshed.");
     } catch (err) {
@@ -256,12 +256,6 @@ export function HomePage(): JSX.Element {
               <article
                 key={`${section}-${item.link}-${index}`}
                 className={`news-card ${selectedIndex === index ? "is-selected" : ""}`}
-                onClick={() =>
-                  setSelectedNewsIndex((current) => ({
-                    ...current,
-                    [section]: current[section] === index ? -1 : index
-                  }))
-                }
               >
                 <div className="news-card-topline">
                   <span>{item.source_name || "News source"}</span>
