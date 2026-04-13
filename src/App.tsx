@@ -35,7 +35,7 @@ export default function App(): JSX.Element {
     return () => {
       observer.disconnect();
     };
-  }, [location.pathname]);
+  });
 
   return (
     <Routes location={location} key={location.pathname}>
