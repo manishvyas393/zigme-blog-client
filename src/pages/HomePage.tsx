@@ -17,6 +17,8 @@ type NewsFeed = Record<NewsSection, SelectedNews[]>;
 
 type SelectedNewsState = Record<NewsSection, number>;
 
+type SiteValue = SiteOption["value"];
+
 const initialForm: FormState = {
   site: "hiring.zigme.in",
   prompt: ""
@@ -26,6 +28,11 @@ const siteOptions: SiteOption[] = [
   { value: "hiring.zigme.in", label: "hiring.zigme.in" },
   { value: "talent.zigme.in", label: "talent.zigme.in" }
 ];
+
+const newsSectionSiteMap: Record<NewsSection, SiteValue> = {
+  hiring: "hiring.zigme.in",
+  talent: "talent.zigme.in"
+};
 
 function isValidSourceUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(String(value || "").trim());
@@ -146,13 +153,16 @@ export function HomePage(): JSX.Element {
       return;
     }
 
+    const targetSite = newsSectionSiteMap[section];
+
     setLoading(true);
     setError("");
     setMessage("");
+    setForm((current) => ({ ...current, site: targetSite }));
 
     try {
       const nextBlog = await api.generateBlogFromNews({
-        site: form.site,
+        site: targetSite,
         prompt: form.prompt || selectedNews.title,
         selectedNews
       });
@@ -230,7 +240,7 @@ export function HomePage(): JSX.Element {
             <div className="news-spinner" />
             <div className="news-loading-copy">
               <strong>Loading {title.toLowerCase()} news</strong>
-              <p>Fetching fresh stories for {form.site}.</p>
+              <p>Fetching fresh stories for {newsSectionSiteMap[section]}.</p>
             </div>
           </div>
         ) : items.length ? (
