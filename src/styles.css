@@ -231,6 +231,10 @@ textarea:focus {
   animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.review-shell {
+  padding: clamp(1.25rem, 2vw, 1.75rem) clamp(1.5rem, 3vw, 2.5rem);
+}
+
 .page-shell {
   display: grid;
   grid-template-columns: 1fr;
