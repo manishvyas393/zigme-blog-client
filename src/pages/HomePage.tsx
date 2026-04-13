@@ -71,6 +71,7 @@ export function HomePage(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const [newsFeed, setNewsFeed] = useState<NewsFeed>({ hiring: [], talent: [] });
   const [selectedNewsIndex, setSelectedNewsIndex] = useState<SelectedNewsState>({
     hiring: -1,
@@ -80,9 +81,22 @@ export function HomePage(): JSX.Element {
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
   const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   function scrollToPreview(): void {
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function showToast(messageText: string): void {
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    setToastMessage(messageText);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToastMessage("");
+      toastTimerRef.current = null;
+    }, 3000);
   }
 
   useEffect(() => {
@@ -102,8 +116,16 @@ export function HomePage(): JSX.Element {
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
+    document.removeEventListener("mousedown", handleClickOutside);
+    document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
     };
   }, []);
 
@@ -223,6 +245,7 @@ export function HomePage(): JSX.Element {
       const response = await api.sendForApproval(blog._id);
       setBlog(response.blog);
       setMessage(response.mail_result.message || "Sent for approval.");
+      showToast("Blog sent for approval.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send for approval.");
     } finally {
@@ -298,6 +321,13 @@ export function HomePage(): JSX.Element {
 
   return (
     <div className="page-shell">
+      {toastMessage ? (
+        <div className="toast-notification" role="status" aria-live="polite">
+          <span className="toast-dot" />
+          <span>{toastMessage}</span>
+        </div>
+      ) : null}
+
       <section className="creator-shell">
         <div className="creator-shell-header">
           <div className="brand-header">
