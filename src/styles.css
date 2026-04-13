@@ -8,6 +8,7 @@
     linear-gradient(180deg, #f8f2e7 0%, #eff5f7 100%);
   line-height: 1.55;
   font-weight: 400;
+  scroll-behavior: smooth;
 }
 
 * {
@@ -219,6 +220,7 @@ textarea:focus {
   max-width: 1520px;
   margin: 0 auto;
   padding: clamp(1rem, 1.6vw, 1.4rem);
+  animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .page-shell {
@@ -879,6 +881,18 @@ textarea:focus {
   }
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -889,5 +903,21 @@ textarea:focus {
   50% {
     transform: scale(1.1);
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .page-shell,
+  .review-shell {
+    animation: none;
   }
 }
