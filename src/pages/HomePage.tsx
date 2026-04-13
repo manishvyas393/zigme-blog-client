@@ -302,8 +302,8 @@ export function HomePage(): JSX.Element {
   }
 
   return (
-    <div className="page-shell">
-      <section className="creator-shell">
+    <div className="page-shell" data-reveal>
+      <section className="creator-shell" data-reveal>
         <div className="creator-shell-header">
           <div>
             <p className="eyebrow">Zigme Blog Creator</p>
@@ -315,7 +315,7 @@ export function HomePage(): JSX.Element {
         </div>
 
         <div className="creator-split">
-          <section className="hero-card">
+          <section className="hero-card" data-reveal>
             <form className="blog-form" onSubmit={handleGenerate}>
               <label>
                 Target site
@@ -383,7 +383,7 @@ export function HomePage(): JSX.Element {
             {error ? <p className="message error">{error}</p> : null}
           </section>
 
-          <section className="news-card-shell">
+          <section className="news-card-shell" data-reveal>
             <div className="news-panel-header">
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
@@ -428,7 +428,7 @@ export function HomePage(): JSX.Element {
       </section>
 
       {blog ? (
-        <section className="preview-card" ref={previewRef}>
+        <section className="preview-card" ref={previewRef} data-reveal>
           <div className="preview-header">
             <div className="preview-copy">
               <p className="eyebrow">Generated Draft</p>
