@@ -72,6 +72,7 @@ export function HomePage(): JSX.Element {
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
   const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
+  const skipNextNewsReloadRef = useRef(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent): void {
@@ -97,6 +98,11 @@ export function HomePage(): JSX.Element {
 
   useEffect(() => {
     async function loadLatestNews(): Promise<void> {
+      if (skipNextNewsReloadRef.current) {
+        skipNextNewsReloadRef.current = false;
+        return;
+      }
+
       setNewsLoading(true);
       setError("");
 
@@ -158,6 +164,7 @@ export function HomePage(): JSX.Element {
     setLoading(true);
     setError("");
     setMessage("");
+    skipNextNewsReloadRef.current = true;
     setForm((current) => ({ ...current, site: targetSite }));
 
     try {
@@ -230,20 +237,12 @@ export function HomePage(): JSX.Element {
         <div className="news-section-header">
           <div>
             <p className="news-section-title">{title}</p>
-            <p className="news-section-count">{items.length} stories</p>
+            <p className="news-section-count">{items.length} news</p>
           </div>
           {selectedNews ? <span className="news-section-selected">Selected</span> : null}
         </div>
 
-        {newsLoading && items.length === 0 ? (
-          <div className="news-loading-state" aria-live="polite" aria-busy="true">
-            <div className="news-spinner" />
-            <div className="news-loading-copy">
-              <strong>Loading {title.toLowerCase()} news</strong>
-              <p>Fetching fresh stories for {newsSectionSiteMap[section]}.</p>
-            </div>
-          </div>
-        ) : items.length ? (
+        {items.length ? (
           <div className="news-list">
             {items.map((item, index) => (
               <article
@@ -262,19 +261,19 @@ export function HomePage(): JSX.Element {
                 </div>
                 <strong>{item.title}</strong>
                 <p>{item.snippet}</p>
-                {isValidSourceUrl(item.link) ? (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="news-source-link"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    View Source
-                  </a>
-                ) : null}
-                {selectedIndex === index ? (
-                  <div className="news-card-actions">
+                <div className="news-card-actions">
+                  {isValidSourceUrl(item.link) ? (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="news-source-link"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      View Source
+                    </a>
+                  ) : null}
+                  {selectedIndex === index ? (
                     <button
                       type="button"
                       className="news-generate-button"
@@ -286,8 +285,8 @@ export function HomePage(): JSX.Element {
                     >
                       {loading ? "Generating..." : "Generate Blog"}
                     </button>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </article>
             ))}
           </div>
@@ -296,13 +295,6 @@ export function HomePage(): JSX.Element {
             <p>No {title.toLowerCase()} news items available right now.</p>
           </div>
         )}
-
-        {newsLoading && items.length > 0 ? (
-          <div className="news-refreshing-state" aria-live="polite">
-            <span className="news-refreshing-dot" />
-            Refreshing {title.toLowerCase()} news...
-          </div>
-        ) : null}
       </section>
     );
   }
@@ -394,7 +386,7 @@ export function HomePage(): JSX.Element {
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
                 <p className="news-hint">
-                  These stories load automatically. Choose one from hiring or talent
+                  These news items load automatically. Choose one from hiring or talent
                   and generate the blog from it.
                 </p>
               </div>
@@ -407,6 +399,16 @@ export function HomePage(): JSX.Element {
                 {newsLoading ? "Refreshing..." : "Refresh"}
               </button>
             </div>
+
+            {newsLoading ? (
+              <div className="news-global-loader" aria-live="polite" aria-busy="true">
+                <div className="news-spinner" />
+                <div className="news-loading-copy">
+                  <strong>Fetching latest news</strong>
+                  <p>Loading hiring and talent news together.</p>
+                </div>
+              </div>
+            ) : null}
 
             <div className="news-sections">
               {renderNewsSection("hiring", "Hiring")}
