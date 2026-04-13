@@ -34,6 +34,8 @@ const siteOptions: SiteOption[] = [
   { value: "talent.zigme.in", label: "talent.zigme.in" }
 ];
 
+const latestNewsSite: SiteValue = "hiring.zigme.in";
+
 const newsSectionSiteMap: Record<NewsSection, SiteValue> = {
   hiring: "hiring.zigme.in",
   talent: "talent.zigme.in"
@@ -105,6 +107,31 @@ export function HomePage(): JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    async function loadLatestNews(): Promise<void> {
+      setNewsLoading(true);
+      setError("");
+
+      try {
+        const response = await api.getLatestNews({ site: latestNewsSite });
+        setNewsFeed({
+          hiring: response.hiring || [],
+          talent: response.talent || []
+        });
+        setSelectedNewsIndex({
+          hiring: -1,
+          talent: -1
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load latest news.");
+      } finally {
+        setNewsLoading(false);
+      }
+    }
+
+    void loadLatestNews();
+  }, []);
+
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setLoading(true);
@@ -142,7 +169,6 @@ export function HomePage(): JSX.Element {
       ...current,
       [section]: index
     }));
-    setForm((current) => ({ ...current, site: targetSite }));
 
     try {
       const nextBlog = await api.generateBlogFromNews({
@@ -166,7 +192,7 @@ export function HomePage(): JSX.Element {
     setError("");
 
     try {
-      const response = await api.getLatestNews({ site: form.site });
+      const response = await api.getLatestNews({ site: latestNewsSite });
       setNewsFeed({
         hiring: response.hiring || [],
         talent: response.talent || []
@@ -359,8 +385,8 @@ export function HomePage(): JSX.Element {
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
                 <p className="news-hint">
-                  Click Refresh to load the latest hiring and talent news for the selected
-                  site. Choose one item and generate the blog from it.
+                  Latest hiring and talent news loads on page open. Click Refresh to fetch
+                  the newest set again, then choose one item and generate the blog from it.
                 </p>
               </div>
               <button
