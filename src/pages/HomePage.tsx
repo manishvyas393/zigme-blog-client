@@ -80,6 +80,10 @@ export function HomePage(): JSX.Element {
   const previewRef = useRef<HTMLElement | null>(null);
   const skipNextNewsReloadRef = useRef(false);
 
+  function scrollToPreview(): void {
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent): void {
       if (!siteMenuRef.current?.contains(event.target as Node)) {
@@ -142,9 +146,7 @@ export function HomePage(): JSX.Element {
       const nextBlog = await api.generateBlog(form);
       setBlog(nextBlog);
       setMessage("Blog draft generated successfully.");
-      setTimeout(() => {
-        previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
+      window.setTimeout(scrollToPreview, 50);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate blog.");
     } finally {
@@ -182,9 +184,7 @@ export function HomePage(): JSX.Element {
       });
       setBlog(nextBlog);
       setMessage("Blog draft generated from selected news.");
-      setTimeout(() => {
-        previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
+      window.setTimeout(scrollToPreview, 50);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate blog from news.");
     } finally {
@@ -223,6 +223,7 @@ export function HomePage(): JSX.Element {
     setSubmitting(true);
     setError("");
     setMessage("");
+    scrollToPreview();
 
     try {
       const response = await api.sendForApproval(blog._id);
@@ -302,8 +303,8 @@ export function HomePage(): JSX.Element {
   }
 
   return (
-    <div className="page-shell" data-reveal>
-      <section className="creator-shell" data-reveal>
+    <div className="page-shell">
+      <section className="creator-shell">
         <div className="creator-shell-header">
           <div>
             <p className="eyebrow">Zigme Blog Creator</p>
@@ -315,7 +316,7 @@ export function HomePage(): JSX.Element {
         </div>
 
         <div className="creator-split">
-          <section className="hero-card" data-reveal>
+          <section className="hero-card">
             <form className="blog-form" onSubmit={handleGenerate}>
               <label>
                 Target site
@@ -383,7 +384,7 @@ export function HomePage(): JSX.Element {
             {error ? <p className="message error">{error}</p> : null}
           </section>
 
-          <section className="news-card-shell" data-reveal>
+          <section className="news-card-shell">
             <div className="news-panel-header">
               <div>
                 <p className="eyebrow">Top 10 Latest News</p>
@@ -428,7 +429,7 @@ export function HomePage(): JSX.Element {
       </section>
 
       {blog ? (
-        <section className="preview-card" ref={previewRef} data-reveal>
+        <section className="preview-card" ref={previewRef}>
           <div className="preview-header">
             <div className="preview-copy">
               <p className="eyebrow">Generated Draft</p>

@@ -72,34 +72,22 @@ export function ReviewPage(): JSX.Element {
   }
 
   if (loading) {
-    return (
-      <div className="review-shell" data-reveal>
-        Loading review...
-      </div>
-    );
+    return <div className="review-shell">Loading review...</div>;
   }
 
   if (error && !blog) {
-    return (
-      <div className="review-shell error-state" data-reveal>
-        {error}
-      </div>
-    );
+    return <div className="review-shell error-state">{error}</div>;
   }
 
   if (!blog) {
-    return (
-      <div className="review-shell error-state" data-reveal>
-        Review not found.
-      </div>
-    );
+    return <div className="review-shell error-state">Review not found.</div>;
   }
 
   const statusClass = `status-pill status-pill--${blog.status.replace(/_/g, "-")}`;
 
   return (
-    <div className="review-shell" data-reveal>
-      <section className="review-card" data-reveal>
+    <div className="review-shell">
+      <section className="review-card">
         <p className="eyebrow">Review Request</p>
         <h1>{blog.title}</h1>
         <p className="summary">{blog.summary}</p>

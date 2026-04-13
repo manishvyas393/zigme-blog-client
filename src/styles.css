@@ -223,20 +223,6 @@ textarea:focus {
   animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
-}
-
-[data-reveal].is-revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .page-shell {
   display: grid;
   grid-template-columns: 1fr;
@@ -933,11 +919,5 @@ textarea:focus {
   .page-shell,
   .review-shell {
     animation: none;
-  }
-
-  [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
   }
 }
