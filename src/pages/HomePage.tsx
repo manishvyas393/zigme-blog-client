@@ -215,15 +215,23 @@ export function HomePage(): JSX.Element {
   const draftImageInputRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+  const activeAttachedImage = attachedImage || blog?.attached_image || null;
+  const hasFreshAttachedImage = Boolean(
+    attachedImage && attachedImage !== blog?.attached_image
+  );
 
   function scrollToPreview(): void {
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const previewHtmlContent =
-    blog && attachedImage
-      ? updatePreviewFeaturedImage(blog.html_content, attachedImage)
+    blog && activeAttachedImage
+      ? updatePreviewFeaturedImage(blog.html_content, activeAttachedImage)
       : blog?.html_content || "";
+
+  useEffect(() => {
+    setAttachedImage(blog?.attached_image || null);
+  }, [blog?._id]);
 
   function clearAttachedImageInputs(): void {
     if (draftImageInputRef.current) {
@@ -421,13 +429,15 @@ export function HomePage(): JSX.Element {
 
     try {
       if (existingBlog) {
-        setBlog(existingBlog);
-        void loadSelectedNewsVersions(existingBlog);
-        setMessage(
-          existingBlog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
-        );
-        window.setTimeout(scrollToPreview, 50);
-        return;
+        if (!hasFreshAttachedImage) {
+          setBlog(existingBlog);
+          void loadSelectedNewsVersions(existingBlog);
+          setMessage(
+            existingBlog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
+          );
+          window.setTimeout(scrollToPreview, 50);
+          return;
+        }
       }
 
       setLoading(true);
@@ -438,17 +448,19 @@ export function HomePage(): JSX.Element {
       });
 
       if (lookup.blog) {
-        setExistingBlogsByLink((current) => ({
-          ...current,
-          [selectedNews.link]: lookup.blog
-        }));
-        setBlog(lookup.blog);
-        void loadSelectedNewsVersions(lookup.blog);
-        setMessage(
-          lookup.blog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
-        );
-        window.setTimeout(scrollToPreview, 50);
-        return;
+        if (!hasFreshAttachedImage) {
+          setExistingBlogsByLink((current) => ({
+            ...current,
+            [selectedNews.link]: lookup.blog
+          }));
+          setBlog(lookup.blog);
+          void loadSelectedNewsVersions(lookup.blog);
+          setMessage(
+            lookup.blog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
+          );
+          window.setTimeout(scrollToPreview, 50);
+          return;
+        }
       }
 
       const nextBlog = await api.generateBlogFromNews({
@@ -650,7 +662,7 @@ export function HomePage(): JSX.Element {
         site: blog.site as SiteValue,
         prompt: form.prompt || blog.prompt,
         wordRange: form.wordRange,
-        attachedImage
+        attachedImage: activeAttachedImage
       };
 
       const nextBlog = blog.selected_news
