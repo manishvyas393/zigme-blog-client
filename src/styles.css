@@ -857,7 +857,6 @@ textarea:focus {
   gap: 0.85rem;
   min-height: 360px;
   padding: 1rem;
-  background: transparent;
   z-index: 2;
 }
 
@@ -914,10 +913,11 @@ textarea:focus {
 }
 
 .news-card--featured:not(.has-feature-image) .news-card-feature-overlay {
-  background:
-    linear-gradient(180deg, rgba(17, 61, 92, 0.08), rgba(17, 61, 92, 0.14)),
-    #f8fbfd;
   position: relative;
+  inset: auto;
+  min-height: 0;
+  justify-content: flex-start;
+  padding: 1rem;
 }
 
 .news-card--featured:not(.has-feature-image) .news-card-topline {
@@ -935,6 +935,31 @@ textarea:focus {
 
 .news-card--featured:not(.has-feature-image) p {
   color: #5d7288;
+}
+
+.news-card--featured:not(.has-feature-image) .news-card-feature {
+  margin-top: 0;
+}
+
+.news-card--featured:not(.has-feature-image) .news-card-actions {
+  margin-top: 0.2rem;
+}
+
+.news-card--featured:not(.has-feature-image) {
+  box-shadow: 0 16px 34px rgba(35, 46, 69, 0.04);
+  border-color: rgba(19, 34, 56, 0.06);
+}
+
+.news-card--featured:not(.has-feature-image)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 10% 16%, rgba(255, 180, 193, 0.32), transparent 28%),
+    radial-gradient(circle at 86% 84%, rgba(17, 61, 92, 0.04), transparent 30%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .news-list {
