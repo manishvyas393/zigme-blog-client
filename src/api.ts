@@ -6,6 +6,13 @@ export interface SelectedNews {
   published_at: string;
 }
 
+export interface BlogImageAttachment {
+  name: string;
+  type: string;
+  size: number;
+  data_url: string;
+}
+
 export interface SearchResult {
   title: string;
   link: string;
@@ -18,12 +25,15 @@ export interface Blog {
   revision: number;
   site: string;
   prompt: string;
+  approval_email: string;
+  word_range: "0-500" | "500-1000" | "1000-1500" | "1500-2000";
   search_query: string;
   title: string;
   summary: string;
   html_content: string;
   status: "draft" | "pending" | "approved" | "rejected";
   selected_news: SelectedNews | null;
+  attached_image: BlogImageAttachment | null;
   source_results: SearchResult[];
   generation_notes: string;
   created_at: string;
@@ -183,21 +193,37 @@ export const api = {
       };
     }) as Promise<LatestNewsFeed>;
   },
-  generateBlog(body: { site: string; prompt: string }) {
+  generateBlog(body: {
+    site: string;
+    prompt: string;
+    approvalEmail?: string;
+    wordRange: Blog["word_range"];
+    attachedImage: BlogImageAttachment | null;
+  }) {
     return request<Blog>("/blogs/generate", {
       method: "POST",
       body: JSON.stringify(body)
     });
   },
-  generateBlogFromNews(body: { site: string; prompt: string; selectedNews: SelectedNews }) {
+  generateBlogFromNews(body: {
+    site: string;
+    prompt: string;
+    approvalEmail?: string;
+    wordRange: Blog["word_range"];
+    attachedImage: BlogImageAttachment | null;
+    selectedNews: SelectedNews;
+  }) {
     return request<Blog>("/blogs/generate-from-news", {
       method: "POST",
       body: JSON.stringify(body)
     });
   },
-  sendForApproval(id: string) {
+  sendForApproval(id: string, approvalEmail?: string) {
     return request<SendForApprovalResponse>(`/blogs/${id}/send-for-approval`, {
-      method: "POST"
+      method: "POST",
+      body: JSON.stringify({
+        approvalEmail
+      })
     });
   },
   getReview(id: string) {
