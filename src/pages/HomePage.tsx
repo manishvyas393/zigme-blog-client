@@ -1061,15 +1061,6 @@ export function HomePage(): JSX.Element {
 
             <div className="draft-layout">
               <div className="draft-canvas">
-                {blog.attached_image ? (
-                  <div className="draft-hero-image">
-                    <img
-                      src={blog.attached_image.data_url}
-                      alt={blog.attached_image.name || "Attached image"}
-                    />
-                  </div>
-                ) : null}
-
                 <div className="draft-body-shell">
                   <div className="draft-body-header">
                     <div>
