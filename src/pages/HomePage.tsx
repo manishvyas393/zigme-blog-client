@@ -708,7 +708,7 @@ export function HomePage(): JSX.Element {
             <article className="hero-preview-card hero-preview-card--primary">
               <span className="hero-preview-label">Generate</span>
               <strong>Create a story in one click</strong>
-              <p>Use the latest feed, your topic, and optional media.</p>
+              <p>Use the latest feed and your topic.</p>
             </article>
             <article className="hero-preview-card hero-preview-card--secondary">
               <span className="hero-preview-label">Approve</span>
