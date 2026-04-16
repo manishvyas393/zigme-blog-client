@@ -172,6 +172,7 @@ export function HomePage(): JSX.Element {
     hiring: -1,
     talent: -1
   });
+  const [activeNewsSection, setActiveNewsSection] = useState<NewsSection>("hiring");
   const [generatingNewsTarget, setGeneratingNewsTarget] = useState<NewsTarget>(null);
   const [libraryFilters, setLibraryFilters] = useState<LibraryFilters>(initialLibraryFilters);
   const [libraryPage, setLibraryPage] = useState(0);
@@ -536,6 +537,8 @@ export function HomePage(): JSX.Element {
     const items = newsFeed[section];
     const selectedIndex = selectedNewsIndex[section];
     const selectedNews = items[selectedIndex];
+    const featuredNews = items[0];
+    const sideStories = items.slice(1);
 
     return (
       <section className="news-section" aria-label={`${title} news`}>
@@ -548,46 +551,110 @@ export function HomePage(): JSX.Element {
         </div>
 
         {items.length ? (
-          <div className="news-list">
-            {items.map((item, index) => (
+          <div className="news-layout">
+            {featuredNews ? (
               <article
-                key={`${section}-${item.link}-${index}`}
-                className={`news-card ${selectedIndex === index ? "is-selected" : ""}`}
+                key={`${section}-${featuredNews.link}-featured`}
+                className={`news-card news-card--featured ${
+                  featuredNews.image_url ? "has-feature-image" : ""
+                } ${selectedIndex === 0 ? "is-selected" : ""}`}
               >
-                <div className="news-card-topline">
-                  <span>{item.source_name || "News source"}</span>
-                  <span>{formatPublishedDate(item.published_at)}</span>
-                </div>
-                <strong>{item.title}</strong>
-                <p>{item.snippet}</p>
-                <div className="news-card-actions">
-                  {isValidSourceUrl(item.link) ? (
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="news-source-link"
-                      onClick={(event) => event.stopPropagation()}
+                {featuredNews.image_url ? (
+                  <div className="news-card-feature-image news-card-feature-image--hero">
+                    <img src={featuredNews.image_url} alt={featuredNews.title} />
+                  </div>
+                ) : null}
+                <div className="news-card-feature-overlay">
+                  <div className="news-card-topline">
+                    <span>{featuredNews.source_name || "News source"}</span>
+                    <span>{formatPublishedDate(featuredNews.published_at)}</span>
+                  </div>
+                  <div className="news-card-feature">
+                    <span className="news-card-feature-badge">{title}</span>
+                    <strong>{featuredNews.title}</strong>
+                    <p>{featuredNews.snippet}</p>
+                  </div>
+                  <div className="news-card-actions">
+                    {isValidSourceUrl(featuredNews.link) ? (
+                      <a
+                        href={featuredNews.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="news-source-link"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        View Source
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="news-generate-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleGenerateFromNews(section, 0);
+                      }}
+                      disabled={loading}
                     >
-                      View Source
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="news-generate-button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleGenerateFromNews(section, index);
-                    }}
-                    disabled={loading}
-                  >
-                    {generatingNewsTarget?.section === section && generatingNewsTarget.index === index && loading
-                      ? "Generating..."
-                      : "Generate Blog"}
-                  </button>
+                      {generatingNewsTarget?.section === section &&
+                      generatingNewsTarget.index === 0 &&
+                      loading
+                        ? "Generating..."
+                        : "Generate Blog"}
+                    </button>
+                  </div>
                 </div>
               </article>
-            ))}
+            ) : null}
+
+            {sideStories.length ? (
+              <div className="news-list">
+                {sideStories.map((item, index) => {
+                  const actualIndex = index + 1;
+
+                  return (
+                    <article
+                      key={`${section}-${item.link}-${actualIndex}`}
+                      className={`news-card ${selectedIndex === actualIndex ? "is-selected" : ""}`}
+                    >
+                      <div className="news-card-topline">
+                        <span>{item.source_name || "News source"}</span>
+                        <span>{formatPublishedDate(item.published_at)}</span>
+                      </div>
+                      <strong>{item.title}</strong>
+                      <p>{item.snippet}</p>
+                      <div className="news-card-actions">
+                        {isValidSourceUrl(item.link) ? (
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="news-source-link"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            View Source
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="news-generate-button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleGenerateFromNews(section, actualIndex);
+                          }}
+                          disabled={loading}
+                        >
+                          {generatingNewsTarget?.section === section &&
+                          generatingNewsTarget.index === actualIndex &&
+                          loading
+                            ? "Generating..."
+                            : "Generate Blog"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="empty-news-state">
@@ -729,65 +796,67 @@ export function HomePage(): JSX.Element {
         <div className="creator-split">
           <section className="hero-card">
             <form className="blog-form" onSubmit={handleGenerate}>
-              <label>
-                Target site
-                <div
-                  className={`select-wrap custom-select ${isSiteMenuOpen ? "is-open" : ""}`}
-                  ref={siteMenuRef}
-                >
-                  <button
-                    type="button"
-                    className="select-trigger"
-                    aria-haspopup="listbox"
-                    aria-expanded={isSiteMenuOpen}
-                    onClick={() => setIsSiteMenuOpen((current) => !current)}
+              <div className="blog-form-row">
+                <label className="blog-form-field blog-form-field--site">
+                  Target site
+                  <div
+                    className={`select-wrap custom-select ${isSiteMenuOpen ? "is-open" : ""}`}
+                    ref={siteMenuRef}
                   >
-                    <span>{siteOptions.find((option) => option.value === form.site)?.label}</span>
+                    <button
+                      type="button"
+                      className="select-trigger"
+                      aria-haspopup="listbox"
+                      aria-expanded={isSiteMenuOpen}
+                      onClick={() => setIsSiteMenuOpen((current) => !current)}
+                    >
+                      <span>{siteOptions.find((option) => option.value === form.site)?.label}</span>
+                    </button>
+
+                    {isSiteMenuOpen ? (
+                      <div className="select-menu" role="listbox" aria-label="Target site options">
+                        {siteOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="option"
+                            className={`select-option ${
+                              option.value === form.site ? "is-selected" : ""
+                            }`}
+                            aria-selected={option.value === form.site}
+                            onClick={() => {
+                              setForm((current) => ({ ...current, site: option.value }));
+                              setIsSiteMenuOpen(false);
+                            }}
+                          >
+                            <span>{option.label}</span>
+                            {option.value === form.site ? (
+                              <span className="option-check">Selected</span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </label>
+
+                <label className="blog-form-field blog-form-field--prompt">
+                  Blog topic
+                  <input
+                    type="text"
+                    placeholder="Example: Write a blog about how AI is changing campus hiring and what it means for employers and students."
+                    value={form.prompt}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, prompt: event.target.value }))
+                    }
+                  />
+                </label>
+
+                <div className="actions blog-form-actions">
+                  <button type="submit" disabled={loading}>
+                    {loading ? "Generating..." : "Generate"}
                   </button>
-
-                  {isSiteMenuOpen ? (
-                    <div className="select-menu" role="listbox" aria-label="Target site options">
-                      {siteOptions.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          role="option"
-                          className={`select-option ${
-                            option.value === form.site ? "is-selected" : ""
-                          }`}
-                          aria-selected={option.value === form.site}
-                          onClick={() => {
-                            setForm((current) => ({ ...current, site: option.value }));
-                            setIsSiteMenuOpen(false);
-                          }}
-                        >
-                          <span>{option.label}</span>
-                          {option.value === form.site ? (
-                            <span className="option-check">Selected</span>
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
-              </label>
-
-              <label>
-                Blog topic
-                <textarea
-                  rows={5}
-                  placeholder="Example: Write a blog about how AI is changing campus hiring and what it means for employers and students."
-                  value={form.prompt}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, prompt: event.target.value }))
-                  }
-                />
-              </label>
-
-              <div className="actions">
-                <button type="submit" disabled={loading}>
-                  {loading ? "Generating..." : "Generate"}
-                </button>
               </div>
             </form>
 
@@ -824,9 +893,27 @@ export function HomePage(): JSX.Element {
               </div>
             ) : null}
 
-            <div className="news-sections">
-              {renderNewsSection("hiring", "Hiring")}
-              {renderNewsSection("talent", "Talent")}
+            <div className="news-tabs" role="tablist" aria-label="Latest news sections">
+              {(["hiring", "talent"] as const).map((section) => (
+                <button
+                  key={section}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeNewsSection === section}
+                  className={`news-tab ${activeNewsSection === section ? "is-active" : ""}`}
+                  onClick={() => setActiveNewsSection(section)}
+                >
+                  <span>{section === "hiring" ? "Hiring" : "Talent"}</span>
+                  <span>{newsFeed[section].length}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="news-tab-panel">
+              {renderNewsSection(
+                activeNewsSection,
+                activeNewsSection === "hiring" ? "Hiring" : "Talent"
+              )}
             </div>
 
             {newsLoading && (newsFeed.hiring.length > 0 || newsFeed.talent.length > 0) ? (

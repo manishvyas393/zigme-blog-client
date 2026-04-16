@@ -4,6 +4,7 @@ export interface SelectedNews {
   snippet: string;
   source_name: string;
   published_at: string;
+  image_url?: string;
 }
 
 export interface BlogImageAttachment {
