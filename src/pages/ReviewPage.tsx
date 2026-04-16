@@ -2,6 +2,37 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, type Blog } from "../api.js";
 
+function escapeHtml(value: string): string {
+  return value
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#39;");
+}
+
+function buildReviewHtmlContent(blog: Blog): string {
+  const attachment = blog.attached_image;
+  const htmlContent = blog.html_content || "";
+
+  if (!attachment?.data_url) {
+    return htmlContent;
+  }
+
+  const imageMarkup = `
+    <figure class="blog-feature-image">
+      <img src="${attachment.data_url}" alt="${escapeHtml(attachment.name || "Uploaded image")}" />
+    </figure>
+  `;
+  const featuredImagePattern = /<figure class="blog-feature-image">[\s\S]*?<\/figure>/i;
+
+  if (featuredImagePattern.test(htmlContent)) {
+    return htmlContent.replace(featuredImagePattern, imageMarkup);
+  }
+
+  return `${imageMarkup}${htmlContent}`;
+}
+
 export function ReviewPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -83,6 +114,7 @@ export function ReviewPage(): JSX.Element {
     return <div className="review-shell error-state">Review not found.</div>;
   }
 
+  const reviewHtmlContent = buildReviewHtmlContent(blog);
   const statusClass = `status-pill status-pill--${blog.status.replace(/_/g, "-")}`;
 
   return (
@@ -106,7 +138,7 @@ export function ReviewPage(): JSX.Element {
         <div
           className="blog-body"
           dangerouslySetInnerHTML={{
-            __html: blog.html_content
+            __html: reviewHtmlContent
           }}
         />
 
