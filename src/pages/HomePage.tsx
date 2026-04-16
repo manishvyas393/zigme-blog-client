@@ -219,6 +219,12 @@ export function HomePage(): JSX.Element {
   const hasFreshAttachedImage = Boolean(
     attachedImage && attachedImage !== blog?.attached_image
   );
+  const isReviewLocked = blog?.status === "pending" || blog?.status === "approved";
+  const reviewStateTitle = blog?.status === "pending" ? "Pending approval" : "Published";
+  const reviewStateCopy =
+    blog?.status === "pending"
+      ? "This draft has been sent for review. Regenerate, approval, and draft settings are locked until the review is resolved."
+      : "This blog is published. Regenerate, approval, and draft settings are hidden for published content.";
 
   function scrollToPreview(): void {
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -394,7 +400,7 @@ export function HomePage(): JSX.Element {
     try {
       const nextBlog = await api.generateBlog({
         ...form,
-        attachedImage
+        attachedImage: activeAttachedImage
       });
       setBlog(nextBlog);
       void loadSelectedNewsVersions(nextBlog);
@@ -467,7 +473,7 @@ export function HomePage(): JSX.Element {
         site: targetSite,
         prompt: form.prompt || selectedNews.title,
         wordRange: form.wordRange,
-        attachedImage,
+        attachedImage: activeAttachedImage,
         selectedNews
       });
       setExistingBlogsByLink((current) => ({
@@ -1252,6 +1258,19 @@ export function HomePage(): JSX.Element {
               </div>
 
               <aside className="draft-rail">
+                {isReviewLocked ? (
+                  <div className={`draft-info-card draft-review-status-card is-${blog.status}`}>
+                    <p className="draft-section-label">Review state</p>
+                    <div className="draft-review-status-header">
+                      <strong>{reviewStateTitle}</strong>
+                      <span className={`status-pill status-pill--${blog.status}`}>
+                        {blog.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <p className="draft-review-status-copy">{reviewStateCopy}</p>
+                  </div>
+                ) : null}
+
                 {blog.attached_image ? (
                   <div className="draft-info-card">
                     <p className="draft-section-label">Attached image</p>
@@ -1358,7 +1377,7 @@ export function HomePage(): JSX.Element {
                   </div>
                 ) : null}
 
-                {blog.status === "approved" ? null : (
+                {isReviewLocked ? null : (
                   <div className="draft-settings-card">
                     <div className="draft-settings-header">
                       <div>
@@ -1446,16 +1465,16 @@ export function HomePage(): JSX.Element {
               </aside>
             </div>
 
-            <div className="preview-actions draft-actions">
-              <button
-                type="button"
-                className="secondary"
-                disabled={loading}
-                onClick={() => void handleRegenerateDraft()}
-              >
-                {loading ? "Regenerating..." : "Regenerate Draft"}
-              </button>
-              {blog.status === "approved" ? null : (
+            {isReviewLocked ? null : (
+              <div className="preview-actions draft-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={loading}
+                  onClick={() => void handleRegenerateDraft()}
+                >
+                  {loading ? "Regenerating..." : "Regenerate Draft"}
+                </button>
                 <button
                   type="button"
                   className="approval-button"
@@ -1464,8 +1483,8 @@ export function HomePage(): JSX.Element {
                 >
                   {submitting ? "Sending..." : "Send for Approval"}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
       ) : null}

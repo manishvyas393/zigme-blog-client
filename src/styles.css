@@ -2704,6 +2704,34 @@ button:hover:not(:disabled),
   box-shadow: 0 16px 34px rgba(35, 46, 69, 0.06);
 }
 
+.draft-review-status-card {
+  gap: 0.65rem;
+}
+
+.draft-review-status-card.is-pending {
+  background: linear-gradient(180deg, rgba(255, 245, 231, 0.98), rgba(255, 250, 243, 0.94));
+  border-color: rgba(240, 111, 125, 0.18);
+}
+
+.draft-review-status-card.is-approved {
+  background: linear-gradient(180deg, rgba(236, 248, 240, 0.98), rgba(246, 251, 247, 0.94));
+  border-color: rgba(31, 106, 61, 0.16);
+}
+
+.draft-review-status-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.draft-review-status-copy {
+  margin: 0;
+  color: #5d7288;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
 .draft-media-row {
   display: grid;
   grid-template-columns: 3.5rem minmax(0, 1fr);
