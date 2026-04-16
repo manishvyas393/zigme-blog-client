@@ -724,12 +724,6 @@ export function HomePage(): JSX.Element {
           <div className="brand-header">
             <p className="eyebrow">ZigMe BLOG TOOL</p>
           </div>
-          <div>
-            <p className="hero-copy">
-              Choose the publishing site, pick a target length, attach an image if needed,
-              and generate a blog from one of the latest news items.
-            </p>
-          </div>
         </div>
 
         <div className="creator-split">
