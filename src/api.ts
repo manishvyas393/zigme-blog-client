@@ -89,6 +89,14 @@ export interface RejectResponse {
   mail_result: MailResult;
 }
 
+export interface BlogFromNewsResponse {
+  blog: Blog | null;
+}
+
+export interface BlogVersionsFromNewsResponse {
+  blogs: Blog[];
+}
+
 export interface GetBlogsParams {
   status?: "draft" | "pending" | "approved" | "rejected";
   platform?: "talent" | "hiring";
@@ -218,6 +226,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body)
     });
+  },
+  getBlogFromNews(params: { site: string; newsLink: string }) {
+    const searchParams = new URLSearchParams({
+      site: params.site,
+      newsLink: params.newsLink
+    });
+
+    return request<BlogFromNewsResponse>(`/blogs/from-news?${searchParams.toString()}`);
+  },
+  getBlogVersionsFromNews(params: { site: string; newsLink: string }) {
+    const searchParams = new URLSearchParams({
+      site: params.site,
+      newsLink: params.newsLink
+    });
+
+    return request<BlogVersionsFromNewsResponse>(`/blogs/from-news/list?${searchParams.toString()}`);
   },
   sendForApproval(id: string, approvalEmail?: string) {
     return request<SendForApprovalResponse>(`/blogs/${id}/send-for-approval`, {

@@ -102,6 +102,26 @@ function formatPublishedDate(value: string | null | undefined): string {
   }).format(parsedDate);
 }
 
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) {
+    return "Unknown time";
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(parsedDate);
+}
+
 function formatFileSize(size: number): string {
   if (!size) {
     return "0 KB";
@@ -172,6 +192,8 @@ export function HomePage(): JSX.Element {
     hiring: -1,
     talent: -1
   });
+  const [existingBlogsByLink, setExistingBlogsByLink] = useState<Record<string, Blog | null>>({});
+  const [selectedNewsVersions, setSelectedNewsVersions] = useState<Blog[]>([]);
   const [activeNewsSection, setActiveNewsSection] = useState<NewsSection>("hiring");
   const [generatingNewsTarget, setGeneratingNewsTarget] = useState<NewsTarget>(null);
   const [libraryFilters, setLibraryFilters] = useState<LibraryFilters>(initialLibraryFilters);
@@ -260,14 +282,18 @@ export function HomePage(): JSX.Element {
 
       try {
         const response = await api.getLatestNews({ site: latestNewsSite });
-        setNewsFeed({
+        const nextFeed = {
           hiring: response.hiring || [],
           talent: response.talent || []
+        };
+        setNewsFeed({
+          ...nextFeed
         });
         setSelectedNewsIndex({
           hiring: -1,
           talent: -1
         });
+        void syncExistingBlogsForFeed(nextFeed);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load latest news.");
       } finally {
@@ -363,6 +389,7 @@ export function HomePage(): JSX.Element {
         attachedImage
       });
       setBlog(nextBlog);
+      void loadSelectedNewsVersions(nextBlog);
       setMessage("Blog draft generated successfully.");
       window.setTimeout(scrollToPreview, 50);
     } catch (err) {
@@ -382,8 +409,8 @@ export function HomePage(): JSX.Element {
     }
 
     const targetSite = newsSectionSiteMap[section];
+    const existingBlog = existingBlogsByLink[selectedNews.link];
 
-    setLoading(true);
     setError("");
     setMessage("");
     setGeneratingNewsTarget({ section, index });
@@ -393,6 +420,37 @@ export function HomePage(): JSX.Element {
     }));
 
     try {
+      if (existingBlog) {
+        setBlog(existingBlog);
+        void loadSelectedNewsVersions(existingBlog);
+        setMessage(
+          existingBlog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
+        );
+        window.setTimeout(scrollToPreview, 50);
+        return;
+      }
+
+      setLoading(true);
+
+      const lookup = await api.getBlogFromNews({
+        site: targetSite,
+        newsLink: selectedNews.link
+      });
+
+      if (lookup.blog) {
+        setExistingBlogsByLink((current) => ({
+          ...current,
+          [selectedNews.link]: lookup.blog
+        }));
+        setBlog(lookup.blog);
+        void loadSelectedNewsVersions(lookup.blog);
+        setMessage(
+          lookup.blog.status === "approved" ? "Loaded published blog." : "Loaded existing blog."
+        );
+        window.setTimeout(scrollToPreview, 50);
+        return;
+      }
+
       const nextBlog = await api.generateBlogFromNews({
         site: targetSite,
         prompt: form.prompt || selectedNews.title,
@@ -400,7 +458,12 @@ export function HomePage(): JSX.Element {
         attachedImage,
         selectedNews
       });
+      setExistingBlogsByLink((current) => ({
+        ...current,
+        [selectedNews.link]: nextBlog
+      }));
       setBlog(nextBlog);
+      void loadSelectedNewsVersions(nextBlog);
       setMessage("Blog draft generated from selected news.");
       window.setTimeout(scrollToPreview, 50);
     } catch (err) {
@@ -417,14 +480,18 @@ export function HomePage(): JSX.Element {
 
     try {
       const response = await api.getLatestNews({ site: latestNewsSite });
-      setNewsFeed({
+      const nextFeed = {
         hiring: response.hiring || [],
         talent: response.talent || []
+      };
+      setNewsFeed({
+        ...nextFeed
       });
       setSelectedNewsIndex({
         hiring: -1,
         talent: -1
       });
+      void syncExistingBlogsForFeed(nextFeed);
       setMessage("Latest news refreshed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to refresh latest news.");
@@ -439,6 +506,81 @@ export function HomePage(): JSX.Element {
       [key]: value
     }));
     setLibraryPage(0);
+  }
+
+  async function syncExistingBlogsForFeed(feed: NewsFeed): Promise<void> {
+    const entries = await Promise.all(
+      (["hiring", "talent"] as const).flatMap((section) =>
+        feed[section].map(async (item) => {
+          if (!item.link) {
+            return [item.link, null] as const;
+          }
+
+          try {
+            const response = await api.getBlogFromNews({
+              site: newsSectionSiteMap[section],
+              newsLink: item.link
+            });
+
+            return [item.link, response.blog] as const;
+          } catch {
+            return [item.link, null] as const;
+          }
+        })
+      )
+    );
+
+    setExistingBlogsByLink((current) => {
+      const next = { ...current };
+
+      entries.forEach(([link, blog]) => {
+        if (!link) {
+          return;
+        }
+
+        if (blog) {
+          next[link] = blog;
+          return;
+        }
+
+        delete next[link];
+      });
+
+      return next;
+    });
+  }
+
+  async function loadSelectedNewsVersions(blogItem: Blog | null): Promise<void> {
+    const selectedLink = blogItem?.selected_news?.link?.trim();
+
+    if (!blogItem || !selectedLink) {
+      setSelectedNewsVersions([]);
+      return;
+    }
+
+    try {
+      const response = await api.getBlogVersionsFromNews({
+        site: blogItem.site as SiteValue,
+        newsLink: selectedLink
+      });
+
+      const nextVersions = [...(response.blogs || [])].sort((left, right) => {
+        const revisionDiff = (right.revision || 0) - (left.revision || 0);
+
+        if (revisionDiff !== 0) {
+          return revisionDiff;
+        }
+
+        const rightTime = Date.parse(right.updated_at || right.created_at || "");
+        const leftTime = Date.parse(left.updated_at || left.created_at || "");
+
+        return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+      });
+
+      setSelectedNewsVersions(nextVersions.length ? nextVersions : [blogItem]);
+    } catch {
+      setSelectedNewsVersions(blogItem ? [blogItem] : []);
+    }
   }
 
   function changeLibraryPage(nextPage: number): void {
@@ -480,6 +622,7 @@ export function HomePage(): JSX.Element {
     try {
       const response = await api.sendForApproval(blog._id, email);
       setBlog(response.blog);
+      void loadSelectedNewsVersions(response.blog);
       setMessage(response.mail_result.message || "Sent for approval.");
       showToast("Blog sent for approval.");
       setApprovalDialogOpen(false);
@@ -524,6 +667,7 @@ export function HomePage(): JSX.Element {
         : await api.generateBlog(sharedPayload);
 
       setBlog(nextBlog);
+      void loadSelectedNewsVersions(nextBlog);
       setMessage("Blog regenerated successfully.");
       window.setTimeout(scrollToPreview, 50);
     } catch (err) {
@@ -533,11 +677,19 @@ export function HomePage(): JSX.Element {
     }
   }
 
+  async function handleSelectNewsVersion(selectedVersion: Blog): Promise<void> {
+    setBlog(selectedVersion);
+    void loadSelectedNewsVersions(selectedVersion);
+    setMessage("Loaded selected blog version.");
+    window.setTimeout(scrollToPreview, 50);
+  }
+
   function renderNewsSection(section: NewsSection, title: string): JSX.Element {
     const items = newsFeed[section];
     const selectedIndex = selectedNewsIndex[section];
     const selectedNews = items[selectedIndex];
     const featuredNews = items[0];
+    const featuredExistingBlog = featuredNews ? existingBlogsByLink[featuredNews.link] : null;
     const featuredImageSrc =
       featuredNews?.image_url ||
       (section === "hiring" ? "/news-fallback-hiring.svg" : "/news-fallback-talent.svg");
@@ -598,21 +750,24 @@ export function HomePage(): JSX.Element {
                       }}
                       disabled={loading}
                     >
-                      {generatingNewsTarget?.section === section &&
-                      generatingNewsTarget.index === 0 &&
-                      loading
-                        ? "Generating..."
-                        : "Generate Blog"}
+                      {featuredExistingBlog
+                        ? "View Blog"
+                        : generatingNewsTarget?.section === section &&
+                            generatingNewsTarget.index === 0 &&
+                            loading
+                          ? "Generating..."
+                          : "Generate Blog"}
                     </button>
                   </div>
                 </div>
               </article>
             ) : null}
 
-            {sideStories.length ? (
+                {sideStories.length ? (
               <div className="news-list">
                 {sideStories.map((item, index) => {
                   const actualIndex = index + 1;
+                  const existingBlog = existingBlogsByLink[item.link];
 
                   return (
                     <article
@@ -646,11 +801,13 @@ export function HomePage(): JSX.Element {
                           }}
                           disabled={loading}
                         >
-                          {generatingNewsTarget?.section === section &&
-                          generatingNewsTarget.index === actualIndex &&
-                          loading
-                            ? "Generating..."
-                            : "Generate Blog"}
+                          {existingBlog
+                            ? "View Blog"
+                            : generatingNewsTarget?.section === section &&
+                                generatingNewsTarget.index === actualIndex &&
+                              loading
+                              ? "Generating..."
+                              : "Generate Blog"}
                         </button>
                       </div>
                     </article>
@@ -1127,89 +1284,153 @@ export function HomePage(): JSX.Element {
                   </div>
                 ) : null}
 
-                <div className="draft-settings-card">
-                  <div className="draft-settings-header">
-                    <div>
-                      <p className="draft-settings-title">Draft settings</p>
-                      <p className="draft-settings-copy">
-                        These values stay attached to the generated draft. Approval email is
-                        collected when you send it for approval.
-                      </p>
+                {blog.status === "approved" ? (
+                  <div className="draft-info-card draft-publication-note">
+                    <p className="draft-section-label">Published</p>
+                    <strong>This blog is published.</strong>
+                    <span>Approval and draft settings are hidden for published content.</span>
+                  </div>
+                ) : null}
+
+                {selectedNewsVersions.length ? (
+                  <div className="draft-info-card draft-version-card">
+                    <div className="draft-version-header">
+                      <div>
+                        <p className="draft-section-label">Blog versions</p>
+                        <strong>Latest versions for this news</strong>
+                      </div>
+                      <span className="draft-version-count">
+                        {selectedNewsVersions.length} {selectedNewsVersions.length === 1 ? "version" : "versions"}
+                      </span>
+                    </div>
+
+                    <div className="draft-version-list">
+                      {selectedNewsVersions.map((version, versionIndex) => {
+                        const isActiveVersion = blog?._id === version._id;
+                        const hasMeaningfulRevisionNumbers = selectedNewsVersions.some(
+                          (item) => (item.revision || 0) > 1
+                        );
+                        const displayRevision = hasMeaningfulRevisionNumbers
+                          ? version.revision
+                          : selectedNewsVersions.length - versionIndex;
+                        const revisionTimestamp = formatDateTime(
+                          version.updated_at || version.created_at
+                        );
+
+                        return (
+                          <button
+                            key={version._id}
+                            type="button"
+                            className={`draft-version-item ${isActiveVersion ? "is-active" : ""}`}
+                            onClick={() => void handleSelectNewsVersion(version)}
+                          >
+                            <div className="draft-version-item-top">
+                              <span className="draft-version-revision">
+                                Revision {displayRevision}
+                              </span>
+                              <span className={`status-pill status-pill--${version.status}`}>
+                                {version.status}
+                              </span>
+                            </div>
+                            <strong>{version.title}</strong>
+                            <div className="draft-version-meta">
+                              <span>
+                                Updated {revisionTimestamp}
+                              </span>
+                              {isActiveVersion ? <span>Selected now</span> : null}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+                ) : null}
 
-                  <div className="draft-settings-grid">
-                    <label className="draft-length-field">
-                      Blog length
-                      <select
-                        value={form.wordRange}
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            wordRange: event.target.value as FormState["wordRange"]
-                          }))
-                        }
-                      >
-                        {wordRangeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <div className="upload-field upload-field--compact">
-                      <div className="upload-field-header">
-                        <div>
-                          <span className="upload-field-label">Blog image</span>
-                          <p className="upload-field-hint">Optional. Max file size 5 MB.</p>
-                        </div>
-                        <input
-                          ref={draftImageInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="visually-hidden"
-                          onChange={(event) => void handleImageChange(event)}
-                        />
-                        <button
-                          type="button"
-                          className="secondary upload-button"
-                          onClick={() => draftImageInputRef.current?.click()}
-                        >
-                          {attachedImage ? "Replace Image" : "Upload Image"}
-                        </button>
+                {blog.status === "approved" ? null : (
+                  <div className="draft-settings-card">
+                    <div className="draft-settings-header">
+                      <div>
+                        <p className="draft-settings-title">Draft settings</p>
+                        <p className="draft-settings-copy">
+                          These values stay attached to the generated draft. Approval email is
+                          collected when you send it for approval.
+                        </p>
                       </div>
+                    </div>
 
-                      {attachedImage ? (
-                        <div className="upload-preview">
-                          <div className="upload-preview-thumb">
-                            <img
-                              src={attachedImage.data_url}
-                              alt={attachedImage.name || "Uploaded image"}
-                            />
+                    <div className="draft-settings-grid">
+                      <label className="draft-length-field">
+                        Blog length
+                        <select
+                          value={form.wordRange}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              wordRange: event.target.value as FormState["wordRange"]
+                            }))
+                          }
+                        >
+                          {wordRangeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <div className="upload-field upload-field--compact">
+                        <div className="upload-field-header">
+                          <div>
+                            <span className="upload-field-label">Blog image</span>
+                            <p className="upload-field-hint">Optional. Max file size 5 MB.</p>
                           </div>
-                          <div className="upload-preview-meta">
-                            <strong>{attachedImage.name}</strong>
-                            <span>
-                              {attachedImage.type || "image"} · {formatFileSize(attachedImage.size)}
-                            </span>
-                          </div>
+                          <input
+                            ref={draftImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="visually-hidden"
+                            onChange={(event) => void handleImageChange(event)}
+                          />
                           <button
                             type="button"
-                            className="secondary upload-remove-button"
-                            onClick={() => {
-                              setAttachedImage(null);
-                              clearAttachedImageInputs();
-                              setMessage("Attached image removed.");
-                            }}
+                            className="secondary upload-button"
+                            onClick={() => draftImageInputRef.current?.click()}
                           >
-                            Remove
+                            {attachedImage ? "Replace Image" : "Upload Image"}
                           </button>
                         </div>
-                      ) : null}
+
+                        {attachedImage ? (
+                          <div className="upload-preview">
+                            <div className="upload-preview-thumb">
+                              <img
+                                src={attachedImage.data_url}
+                                alt={attachedImage.name || "Uploaded image"}
+                              />
+                            </div>
+                            <div className="upload-preview-meta">
+                              <strong>{attachedImage.name}</strong>
+                              <span>
+                                {attachedImage.type || "image"} · {formatFileSize(attachedImage.size)}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="secondary upload-remove-button"
+                              onClick={() => {
+                                setAttachedImage(null);
+                                clearAttachedImageInputs();
+                                setMessage("Attached image removed.");
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </aside>
             </div>
 
@@ -1222,14 +1443,16 @@ export function HomePage(): JSX.Element {
               >
                 {loading ? "Regenerating..." : "Regenerate Draft"}
               </button>
-              <button
-                type="button"
-                className="approval-button"
-                disabled={submitting}
-                onClick={() => void handleSendForApproval()}
-              >
-                {submitting ? "Sending..." : "Send for Approval"}
-              </button>
+              {blog.status === "approved" ? null : (
+                <button
+                  type="button"
+                  className="approval-button"
+                  disabled={submitting}
+                  onClick={() => void handleSendForApproval()}
+                >
+                  {submitting ? "Sending..." : "Send for Approval"}
+                </button>
+              )}
             </div>
           </div>
         </section>
