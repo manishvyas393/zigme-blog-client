@@ -538,6 +538,9 @@ export function HomePage(): JSX.Element {
     const selectedIndex = selectedNewsIndex[section];
     const selectedNews = items[selectedIndex];
     const featuredNews = items[0];
+    const featuredImageSrc =
+      featuredNews?.image_url ||
+      (section === "hiring" ? "/news-fallback-hiring.svg" : "/news-fallback-talent.svg");
     const sideStories = items.slice(1);
 
     return (
@@ -555,13 +558,13 @@ export function HomePage(): JSX.Element {
             {featuredNews ? (
               <article
                 key={`${section}-${featuredNews.link}-featured`}
-                className={`news-card news-card--featured ${
-                  featuredNews.image_url ? "has-feature-image" : ""
-                } ${selectedIndex === 0 ? "is-selected" : ""}`}
+                className={`news-card news-card--featured has-feature-image ${
+                  selectedIndex === 0 ? "is-selected" : ""
+                }`}
               >
-                {featuredNews.image_url ? (
+                {featuredImageSrc ? (
                   <div className="news-card-feature-image news-card-feature-image--hero">
-                    <img src={featuredNews.image_url} alt={featuredNews.title} />
+                    <img src={featuredImageSrc} alt={featuredNews.title} />
                   </div>
                 ) : null}
                 <div className="news-card-feature-overlay">
@@ -867,7 +870,7 @@ export function HomePage(): JSX.Element {
           <section className="news-card-shell">
             <div className="news-panel-header">
               <div>
-                <p className="eyebrow">Top 10 Latest News</p>
+          <p className="eyebrow">Top Latest News</p>
                 <p className="news-hint">
                   Latest hiring and talent news loads on page open. Click Refresh to fetch
                   the newest set again, then choose one item and generate the blog from it.

@@ -1,0 +1,23 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F7FBFF"/>
+      <stop offset="58%" stop-color="#F4F7FD"/>
+      <stop offset="100%" stop-color="#EEF3FA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1240 220) rotate(45) scale(280 280)">
+      <stop stop-color="#5C7EBE" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#5C7EBE" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" rx="48" fill="url(#bg)"/>
+  <rect width="1600" height="900" rx="48" fill="url(#glow)"/>
+  <circle cx="320" cy="190" r="210" fill="#F06F7D" fill-opacity="0.08"/>
+  <circle cx="1420" cy="720" r="220" fill="#163955" fill-opacity="0.08"/>
+  <path d="M150 710C270 642 390 620 510 640C618 658 690 721 780 735C874 750 1006 705 1124 628C1235 556 1320 520 1450 525" stroke="#5C7EBE" stroke-opacity="0.14" stroke-width="28" stroke-linecap="round"/>
+  <path d="M165 748C285 690 404 675 512 689C622 703 715 761 809 772C918 785 1036 740 1149 673C1261 607 1350 571 1466 574" stroke="#F06F7D" stroke-opacity="0.08" stroke-width="18" stroke-linecap="round"/>
+  <rect x="1230" y="116" width="240" height="70" rx="22" fill="#5C7EBE" fill-opacity="0.12"/>
+  <text x="130" y="262" fill="#163955" font-family="Segoe UI, Arial, sans-serif" font-size="68" font-weight="800">Grow skills</text>
+  <text x="130" y="336" fill="#163955" font-family="Segoe UI, Arial, sans-serif" font-size="68" font-weight="800">with momentum</text>
+  <text x="130" y="418" fill="#60778D" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600">A soft editorial fallback for talent stories.</text>
+</svg>

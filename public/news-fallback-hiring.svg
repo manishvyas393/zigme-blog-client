@@ -1,0 +1,23 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFF6F7"/>
+      <stop offset="55%" stop-color="#F9FBFD"/>
+      <stop offset="100%" stop-color="#EEF4FA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(270 220) rotate(45) scale(260 260)">
+      <stop stop-color="#F06F7D" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#F06F7D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" rx="48" fill="url(#bg)"/>
+  <rect width="1600" height="900" rx="48" fill="url(#glow)"/>
+  <circle cx="1220" cy="180" r="180" fill="#5C7EBE" fill-opacity="0.12"/>
+  <circle cx="1360" cy="700" r="240" fill="#5C7EBE" fill-opacity="0.08"/>
+  <path d="M160 678C250 600 350 560 470 564C585 568 666 624 760 637C855 650 981 604 1096 530C1207 458 1296 410 1410 418" stroke="#F06F7D" stroke-opacity="0.15" stroke-width="28" stroke-linecap="round"/>
+  <path d="M180 720C285 651 375 627 472 634C572 641 667 704 769 716C872 728 975 682 1087 615C1199 548 1294 503 1415 512" stroke="#163955" stroke-opacity="0.08" stroke-width="18" stroke-linecap="round"/>
+  <rect x="130" y="116" width="260" height="70" rx="22" fill="#F06F7D" fill-opacity="0.12"/>
+  <text x="130" y="262" fill="#163955" font-family="Segoe UI, Arial, sans-serif" font-size="68" font-weight="800">Build teams</text>
+  <text x="130" y="336" fill="#163955" font-family="Segoe UI, Arial, sans-serif" font-size="68" font-weight="800">with clarity</text>
+  <text x="130" y="418" fill="#60778D" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600">A soft editorial fallback for hiring stories.</text>
+</svg>
