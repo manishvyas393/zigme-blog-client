@@ -290,35 +290,6 @@ export function HomePage(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    async function loadLatestNews(): Promise<void> {
-      setNewsLoading(true);
-      setError("");
-
-      try {
-        const response = await api.getLatestNews({ site: latestNewsSite });
-        const nextFeed = {
-          hiring: response.hiring || [],
-          talent: response.talent || []
-        };
-        setNewsFeed({
-          ...nextFeed
-        });
-        setSelectedNewsIndex({
-          hiring: -1,
-          talent: -1
-        });
-        void syncExistingBlogsForFeed(nextFeed);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load latest news.");
-      } finally {
-        setNewsLoading(false);
-      }
-    }
-
-    void loadLatestNews();
-  }, []);
-
-  useEffect(() => {
     async function loadLibrary(): Promise<void> {
       setLibraryLoading(true);
       setLibraryError("");
@@ -492,7 +463,7 @@ export function HomePage(): JSX.Element {
     }
   }
 
-  async function handleRefreshNews(): Promise<void> {
+  async function fetchLatestNews(): Promise<void> {
     setNewsLoading(true);
     setError("");
 
@@ -512,7 +483,7 @@ export function HomePage(): JSX.Element {
       void syncExistingBlogsForFeed(nextFeed);
       setMessage("Latest news refreshed.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh latest news.");
+      setError(err instanceof Error ? err.message : "Failed to fetch latest news.");
     } finally {
       setNewsLoading(false);
     }
@@ -599,6 +570,10 @@ export function HomePage(): JSX.Element {
     } catch {
       setSelectedNewsVersions(blogItem ? [blogItem] : []);
     }
+  }
+
+  async function handleFetchNews(): Promise<void> {
+    await fetchLatestNews();
   }
 
   function changeLibraryPage(nextPage: number): void {
@@ -1045,19 +1020,19 @@ export function HomePage(): JSX.Element {
           <section className="news-card-shell">
             <div className="news-panel-header">
               <div>
-          <p className="eyebrow">Top Latest News</p>
+                <p className="eyebrow">Top Latest News</p>
                 <p className="news-hint">
-                  Latest hiring and talent news loads on page open. Click Refresh to fetch
-                  the newest set again, then choose one item and generate the blog from it.
+                  Latest hiring and talent news appears only after you click Fetch News, then
+                  choose one item and generate the blog from it.
                 </p>
               </div>
               <button
                 type="button"
                 className="news-refresh-button"
-                onClick={() => void handleRefreshNews()}
+                onClick={() => void handleFetchNews()}
                 disabled={newsLoading}
               >
-                {newsLoading ? "Refreshing..." : "Refresh"}
+                {newsLoading ? "Fetching..." : "Fetch News"}
               </button>
             </div>
 
@@ -1097,7 +1072,7 @@ export function HomePage(): JSX.Element {
             {newsLoading && (newsFeed.hiring.length > 0 || newsFeed.talent.length > 0) ? (
               <div className="news-refreshing-state" aria-live="polite">
                 <span className="news-refreshing-dot" />
-                Refreshing latest news...
+                Fetching latest news...
               </div>
             ) : null}
           </section>

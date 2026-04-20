@@ -986,7 +986,7 @@ textarea:focus {
   margin: 0.4rem 0;
 }
 
-.news-list::-webkit-scrollbar-thumb {
+.news-list::-webkit-scrollbar-thumb {   
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.88);
   background: linear-gradient(180deg, rgba(17, 61, 92, 0.52), rgba(17, 61, 92, 0.78));
