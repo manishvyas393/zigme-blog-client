@@ -9,7 +9,6 @@ type SiteOption = {
 
 type FormState = {
   site: SiteOption["value"];
-  prompt: string;
   wordRange: Blog["word_range"];
 };
 
@@ -55,7 +54,6 @@ const initialLibraryFilters: LibraryFilters = {
 
 const initialForm: FormState = {
   site: "hiring.zigme.in",
-  prompt: "",
   wordRange: "1000-1500"
 };
 
@@ -73,12 +71,20 @@ const wordRangeOptions: WordRangeOption[] = [
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
-const latestNewsSite: SiteValue = "hiring.zigme.in";
-
 const newsSectionSiteMap: Record<NewsSection, SiteValue> = {
   hiring: "hiring.zigme.in",
   talent: "talent.zigme.in"
 };
+
+function defaultPromptForSite(site: SiteValue): string {
+  return site === "talent.zigme.in"
+    ? "campus drives, campus recruitment, fresher hiring, college placements, campus hiring news"
+    : "hiring strategies, recruitment trends, employer hiring, recruitment news, talent acquisition";
+}
+
+function newsSectionForSite(site: SiteValue): NewsSection {
+  return site === "talent.zigme.in" ? "talent" : "hiring";
+}
 
 function isValidSourceUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(String(value || "").trim());
@@ -177,6 +183,53 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+function renderSiteSelector(
+  site: SiteOption["value"],
+  isSiteMenuOpen: boolean,
+  setIsSiteMenuOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setForm: React.Dispatch<React.SetStateAction<FormState>>,
+  siteMenuRef: React.RefObject<HTMLDivElement>,
+  className = ""
+): JSX.Element {
+  return (
+    <div
+      className={`select-wrap custom-select ${isSiteMenuOpen ? "is-open" : ""} ${className}`.trim()}
+      ref={siteMenuRef}
+    >
+      <button
+        type="button"
+        className="select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={isSiteMenuOpen}
+        onClick={() => setIsSiteMenuOpen((current) => !current)}
+      >
+        <span>{siteOptions.find((option) => option.value === site)?.label}</span>
+      </button>
+
+      {isSiteMenuOpen ? (
+        <div className="select-menu" role="listbox" aria-label="Target site options">
+          {siteOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              className={`select-option ${option.value === site ? "is-selected" : ""}`}
+              aria-selected={option.value === site}
+              onClick={() => {
+                setForm((current) => ({ ...current, site: option.value }));
+                setIsSiteMenuOpen(false);
+              }}
+            >
+              <span>{option.label}</span>
+              {option.value === site ? <span className="option-check">Selected</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function HomePage(): JSX.Element {
   const [form, setForm] = useState<FormState>(initialForm);
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -194,7 +247,6 @@ export function HomePage(): JSX.Element {
   });
   const [existingBlogsByLink, setExistingBlogsByLink] = useState<Record<string, Blog | null>>({});
   const [selectedNewsVersions, setSelectedNewsVersions] = useState<Blog[]>([]);
-  const [activeNewsSection, setActiveNewsSection] = useState<NewsSection>("hiring");
   const [generatingNewsTarget, setGeneratingNewsTarget] = useState<NewsTarget>(null);
   const [libraryFilters, setLibraryFilters] = useState<LibraryFilters>(initialLibraryFilters);
   const [libraryPage, setLibraryPage] = useState(0);
@@ -211,10 +263,11 @@ export function HomePage(): JSX.Element {
   const [approvalEmailInput, setApprovalEmailInput] = useState("");
   const [approvalEmailError, setApprovalEmailError] = useState("");
   const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
-  const siteMenuRef = useRef<HTMLDivElement | null>(null);
+  const siteMenuRef = useRef<HTMLDivElement>(null);
   const draftImageInputRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+  const activeNewsSection = newsSectionForSite(form.site);
   const activeAttachedImage = attachedImage || blog?.attached_image || null;
   const hasFreshAttachedImage = Boolean(
     attachedImage && attachedImage !== blog?.attached_image
@@ -370,7 +423,9 @@ export function HomePage(): JSX.Element {
 
     try {
       const nextBlog = await api.generateBlog({
-        ...form,
+        site: form.site,
+        prompt: defaultPromptForSite(form.site),
+        wordRange: form.wordRange,
         attachedImage: activeAttachedImage
       });
       setBlog(nextBlog);
@@ -442,7 +497,7 @@ export function HomePage(): JSX.Element {
 
       const nextBlog = await api.generateBlogFromNews({
         site: targetSite,
-        prompt: form.prompt || selectedNews.title,
+        prompt: selectedNews.title,
         wordRange: form.wordRange,
         attachedImage: activeAttachedImage,
         selectedNews
@@ -468,19 +523,18 @@ export function HomePage(): JSX.Element {
     setError("");
 
     try {
-      const response = await api.getLatestNews({ site: latestNewsSite });
+      const response = await api.getLatestNews({ site: form.site });
+      const selectedSection = newsSectionForSite(form.site);
       const nextFeed = {
-        hiring: response.hiring || [],
-        talent: response.talent || []
+        hiring: selectedSection === "hiring" ? response.hiring || [] : [],
+        talent: selectedSection === "talent" ? response.talent || [] : []
       };
-      setNewsFeed({
-        ...nextFeed
-      });
+      setNewsFeed(nextFeed);
       setSelectedNewsIndex({
         hiring: -1,
         talent: -1
       });
-      void syncExistingBlogsForFeed(nextFeed);
+      void syncExistingBlogsForFeed(nextFeed, selectedSection);
       setMessage("Latest news refreshed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch latest news.");
@@ -497,26 +551,24 @@ export function HomePage(): JSX.Element {
     setLibraryPage(0);
   }
 
-  async function syncExistingBlogsForFeed(feed: NewsFeed): Promise<void> {
+  async function syncExistingBlogsForFeed(feed: NewsFeed, section: NewsSection): Promise<void> {
     const entries = await Promise.all(
-      (["hiring", "talent"] as const).flatMap((section) =>
-        feed[section].map(async (item) => {
-          if (!item.link) {
-            return [item.link, null] as const;
-          }
+      feed[section].map(async (item) => {
+        if (!item.link) {
+          return [item.link, null] as const;
+        }
 
-          try {
-            const response = await api.getBlogFromNews({
-              site: newsSectionSiteMap[section],
-              newsLink: item.link
-            });
+        try {
+          const response = await api.getBlogFromNews({
+            site: newsSectionSiteMap[section],
+            newsLink: item.link
+          });
 
-            return [item.link, response.blog] as const;
-          } catch {
-            return [item.link, null] as const;
-          }
-        })
-      )
+          return [item.link, response.blog] as const;
+        } catch {
+          return [item.link, null] as const;
+        }
+      })
     );
 
     setExistingBlogsByLink((current) => {
@@ -641,7 +693,7 @@ export function HomePage(): JSX.Element {
     try {
       const sharedPayload = {
         site: blog.site as SiteValue,
-        prompt: form.prompt || blog.prompt,
+        prompt: blog.prompt || defaultPromptForSite(blog.site as SiteValue),
         wordRange: form.wordRange,
         attachedImage: activeAttachedImage
       };
@@ -947,93 +999,33 @@ export function HomePage(): JSX.Element {
         </div>
 
         <div className="creator-split">
-          <section className="hero-card">
-            <form className="blog-form" onSubmit={handleGenerate}>
-              <div className="blog-form-row">
-                <label className="blog-form-field blog-form-field--site">
-                  Target site
-                  <div
-                    className={`select-wrap custom-select ${isSiteMenuOpen ? "is-open" : ""}`}
-                    ref={siteMenuRef}
-                  >
-                    <button
-                      type="button"
-                      className="select-trigger"
-                      aria-haspopup="listbox"
-                      aria-expanded={isSiteMenuOpen}
-                      onClick={() => setIsSiteMenuOpen((current) => !current)}
-                    >
-                      <span>{siteOptions.find((option) => option.value === form.site)?.label}</span>
-                    </button>
-
-                    {isSiteMenuOpen ? (
-                      <div className="select-menu" role="listbox" aria-label="Target site options">
-                        {siteOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            role="option"
-                            className={`select-option ${
-                              option.value === form.site ? "is-selected" : ""
-                            }`}
-                            aria-selected={option.value === form.site}
-                            onClick={() => {
-                              setForm((current) => ({ ...current, site: option.value }));
-                              setIsSiteMenuOpen(false);
-                            }}
-                          >
-                            <span>{option.label}</span>
-                            {option.value === form.site ? (
-                              <span className="option-check">Selected</span>
-                            ) : null}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </label>
-
-                <label className="blog-form-field blog-form-field--prompt">
-                  Blog topic
-                  <input
-                    type="text"
-                    placeholder="Example: Write a blog about how AI is changing campus hiring and what it means for employers and students."
-                    value={form.prompt}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, prompt: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <div className="actions blog-form-actions">
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Generating..." : "Generate"}
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {message ? <p className="message success">{message}</p> : null}
-            {error ? <p className="message error">{error}</p> : null}
-          </section>
-
           <section className="news-card-shell">
             <div className="news-panel-header">
               <div>
                 <p className="eyebrow">Top Latest News</p>
                 <p className="news-hint">
-                  Latest hiring and talent news appears only after you click Fetch News, then
-                  choose one item and generate the blog from it.
+                  News appears after you click Fetch News for the selected platform, then choose
+                  one item and generate the blog from it.
                 </p>
               </div>
-              <button
-                type="button"
-                className="news-refresh-button"
-                onClick={() => void handleFetchNews()}
-                disabled={newsLoading}
-              >
-                {newsLoading ? "Fetching..." : "Fetch News"}
-              </button>
+              <div className="news-panel-actions">
+                {renderSiteSelector(
+                  form.site,
+                  isSiteMenuOpen,
+                  setIsSiteMenuOpen,
+                  setForm,
+                  siteMenuRef,
+                  "news-site-selector"
+                )}
+                <button
+                  type="button"
+                  className="news-refresh-button"
+                  onClick={() => void handleFetchNews()}
+                  disabled={newsLoading}
+                >
+                  {newsLoading ? "Fetching..." : "Fetch News"}
+                </button>
+              </div>
             </div>
 
             {newsLoading ? (
@@ -1041,31 +1033,17 @@ export function HomePage(): JSX.Element {
                 <div className="news-spinner" />
                 <div className="news-loading-copy">
                   <strong>Fetching latest news</strong>
-                  <p>Loading hiring and talent news together.</p>
+                  <p>Loading news for the selected platform.</p>
                 </div>
               </div>
             ) : null}
 
-            <div className="news-tabs" role="tablist" aria-label="Latest news sections">
-              {(["hiring", "talent"] as const).map((section) => (
-                <button
-                  key={section}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeNewsSection === section}
-                  className={`news-tab ${activeNewsSection === section ? "is-active" : ""}`}
-                  onClick={() => setActiveNewsSection(section)}
-                >
-                  <span>{section === "hiring" ? "Hiring" : "Talent"}</span>
-                  <span>{newsFeed[section].length}</span>
-                </button>
-              ))}
-            </div>
-
             <div className="news-tab-panel">
               {renderNewsSection(
                 activeNewsSection,
-                activeNewsSection === "hiring" ? "Hiring" : "Talent"
+                activeNewsSection === "hiring"
+                  ? "Hiring"
+                  : "Talent"
               )}
             </div>
 
